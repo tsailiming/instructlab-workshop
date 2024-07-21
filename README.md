@@ -37,3 +37,5 @@ Based on the following sources:
 1. The `bin/install.sh` will setup InstructLab with `instructlab==0.18.0a4` and ensure `llama_cpp_python` has GPU offload support enabled. 
 
 2. A sample [Parasol](https://github.com/rh-rad-ai-roadshow/parasol-insurance.git) application is deployed in the showroom instructions.
+
+3. The updated showroom content can be viewed (showroom/content/modules/ROOT/pages/index.adoc)[here].

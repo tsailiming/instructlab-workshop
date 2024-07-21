@@ -1,6 +1,6 @@
 ## Introduction
 
-This enhances the existing workshop content by adding 
+This repository enhances the existing workshop content. 
 
 ## Credits
 

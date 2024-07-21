@@ -12,7 +12,8 @@ Based on the following sources:
 ## Setup Guide
 
 1. Order a [demo catalogue](https://demo.redhat.com/catalog?item=babylon-catalog-prod/rhdp.instructlab-rhel.prod&utm_source=webapp&utm_medium=share-link)
-2. Git clone 
+
+2. Git clone the repo under the `instruct` user:
 
     ```bash
     git clone https://github.com/tsailiming/instructlab-workshop

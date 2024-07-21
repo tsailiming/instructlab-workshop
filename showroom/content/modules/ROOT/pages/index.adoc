@@ -98,6 +98,14 @@ lspci | grep -i nvidia
 00:1e.0 3D controller: NVIDIA Corporation GA102GL [A10G] (rev a1)
 ----
 
+. NVTOP
++
+https://github.com/Syllo/nvtop[NVTOP] is installed. NVTOP stands for Neat Videocard TOP, a (h)top like task monitor for GPUs and accelerators. It can handle multiple GPUs and print information about them in a htop-familiar way. You can use `nvtop` to view GPU statistics.
++
+[source,sh,role=execute,subs=attributes+]
+----
+nvtop
+----
 
 [#installation]
 === Installing ilab
@@ -155,12 +163,33 @@ llama_cpp_python==0.2.79
 [source,sh,role=execute,subs=attributes+]
 ----
 pip3 install 'instructlab==0.18.0a4'
-pip3 install --force-reinstall "llama_cpp_python[server]==0.2.79" --config-settings cmake.args="-DLLAMA_CUDA=on"
-pip3 install 'numpy<2.0'
 ----
 +
 
 NOTE: `pip install` may take some time, depending on the internet connection available at the conference or if the files have been cached locally.
+
+. Verify GPU offload is https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#supported-backends[enabled] in `llama_cpp_python`
++
+[source,sh,role=execute,subs=attributes+]
+----
+ilab system info | grep llama_cpp
+----
++
+[source,sh]
+----
+llama_cpp_python.version: 0.2.79
+llama_cpp_python.supports_gpu_offload: True
+----
++
+If GPU offload is not present, reinstall with GPU offload:
++
+[source,sh,role=execute,subs=attributes+]
+----
+rm -rf ~/.cache/pip
+pip uninstall llama_cpp_python -y
+pip3 install --force-reinstall "llama_cpp_python[server]==0.2.79" --config-settings cmake.args="-DLLAMA_CUDA=on"
+pip3 install 'numpy<2.0'
+----
 
 . From your venv environment, verify ilab is installed correctly by running the ilab command.
 +
@@ -277,15 +306,6 @@ We have prepared a custom config.yaml for this workshop. Copy `config.yaml` to t
 [source,sh,role=execute,subs=attributes+]
 ----
 cp ~/workshop/config.yaml ~/.config/instructlab/config.yaml
-----
-
-Step 3: Change to a user friendly directory in both terminals
-
-In this workshop, we have sym linked all the necessary directories to simplify the InstructLab profile. There is a current issued filed for https://github.com/instructlab/instructlab/issues/1800[this].
-
-[source,sh,role=execute,subs=attributes+]
-----
-cd ~/instructlab
 ----
 
 [#download]
@@ -613,7 +633,7 @@ cd ~/instructlab
 ilab model serve --model-path models/merlinite-7b-lab-Q4_K_M.gguf
 ----
 
-We will now run the command (in the second Terminal) to generate the synthetic data:
+We will now run the command (in the second Terminal) to generate the synthetic data. This will take about 2 minutes.
 
 [source,sh,role=execute,subs=attributes+]
 ----
@@ -647,7 +667,8 @@ ls datasets/
 
 [source,sh]
 ----
-messages_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl  train_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl
+messages_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl
+train_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl
 test_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl
 ----
 
@@ -656,13 +677,13 @@ Holy Smokes! That was awesome, right?
 NOTE: Generating 5 additional examples is generally not enough to effectively impact the knowledge or skill of a model. However, due to time constraints of this workshop, the goal is to simply show you how this works using real commands. You would typically want to generate 100 or even 1000 additional data points. Even still, training on a laptop is more of a technology demonstration than something you’d want to do to train production LLMs.  For training production LLMs, Red Hat provides RHEL AI and OpenShift AI.
 Once the new data has been generated, the next step is to train the model with the updated skill. This is performed with the `ilab train` command. However, we are not going to perform the full training and part of this workshop due to time constraints.
 
-You can do a simple training using 10 iterations. We have pretrained a model with 100 iterations that takes about 30mins on this environment. 
+You can do a simple training using 5 iterations. We have pretrained a model with 100 iterations that takes about 30mins on this environment. 
 
 Remember to quit the model serving by kbd:[CTRL+C] in the other terminal. You will need the GPU for training.
 
 [source,sh,role=execute,subs=attributes+]
 ----
-ilab ilab model train --device cuda --iters 10 --legacy
+ilab model train --device cuda --iters 5 --legacy
 ----
 
 [source,sh,role=execute,subs=attributes+]
@@ -1767,7 +1788,7 @@ NOTE: Make sure to stop the previous `ilab serve` command that may still have ru
 ----
 cd ~/instructlab
 cp ~/workshop/ggml-ilab-pretrained-Q4_K_M.gguf models/ggml-ilab-pretrained-Q4_K_M.gguf
-ilab serve --model-path models/ggml-ilab-pretrained-Q4_K_M.gguf
+ilab model serve --model-path models/ggml-ilab-pretrained-Q4_K_M.gguf
 ----
 
 NOTE: If you get an error message about not being able to bind to the address, simply kbd:[CTRL+C]  the `ilab serve` command that may still have running in your other terminal tab.
@@ -1776,7 +1797,7 @@ Start up another chat session with it:
 
 [source,sh,role=execute,subs=attributes+]
 ----
-ilab chat -m models/ggml-ilab-pretrained-Q4_K_M.gguf
+ilab model chat -m models/ggml-ilab-pretrained-Q4_K_M.gguf
 ----
 
 Verify the results by entering in the original prompt again:

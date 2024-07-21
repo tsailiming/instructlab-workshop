@@ -1,5 +1,5 @@
-PHONEY: deploy-content
+PHONEY: build-content
 
-deploy-content:
+build-content:
 	@bin/build-content.sh
 	

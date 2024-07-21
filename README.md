@@ -21,14 +21,15 @@ Based on the following sources:
 
 3. Run the install script.
 
-    > [!NOTE]  
-    > `llama_cpp_python` can take 15mins to compile and install. 
-
+  
     ```bash
     cd instructlab-workshop && 
     bin/install.sh
     ```
-    
+
+> [!NOTE]  
+> `llama_cpp_python` can take 15mins to compile and install. 
+
 4. Accesss the updated showroom content
 
 ## Changes

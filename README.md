@@ -24,11 +24,10 @@ Based on the following sources:
 > [!NOTE]  
 > `llama_cpp_python` can take 15mins to compile and install. 
 
-
-    ```bash
-    cd instructlab-workshop
-    bin/install.sh
-    ```
+  ```bash
+  cd instructlab-workshop
+  bin/install.sh
+  ```
     
 4. Accesss the updated showroom content
 

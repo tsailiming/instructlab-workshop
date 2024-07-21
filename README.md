@@ -38,4 +38,4 @@ Based on the following sources:
 
 2. A sample [Parasol](https://github.com/rh-rad-ai-roadshow/parasol-insurance.git) application is deployed in the showroom instructions.
 
-3. The updated showroom content can be viewed (showroom/content/modules/ROOT/pages/index.adoc)[here].
+3. The updated showroom content can be viewed [here](showroom/content/modules/ROOT/pages/index.adoc).

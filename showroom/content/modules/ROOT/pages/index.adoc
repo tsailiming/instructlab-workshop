@@ -1,0 +1,1870 @@
+
+:experimental: true
+
+== Summary of the Project
+
+Thanks for taking time to learn about and use InstructLab at our OpenShift meetup. During this hands-on exercise, you will learn what InstructLab is and how you can contribute to the project. You will also learn how to leverage InstructLab to improve a Large Language Model (LLM), and train it using synthetic data generation.
+
+InstructLab is a fully open-source project from Red Hat, and the MIT-IBM Watson AI Lab, that introduces Large-scale Alignment for chatBots (LAB). The project's innovation helps during the instruction-tuning phase of LLM training. However, to fully understand the benefit of this project, you need to be familiar with some basic concepts of what an LLM is and the difficulty and cost associated with training a model.
+
+[#llms]
+=== What is a Large Language Model?
+
+A large language model (LLM) is a type of artificial intelligence (AI) model that uses deep learning techniques to understand and generate human-like text based on input data. These models are designed to analyze vast amounts of text data and learn patterns, relationships, and structures within the data. They can be used for various natural language processing (NLP) tasks, such as:
+
+. *Text classification*: Categorizing text based on its content, such as spam detection or sentiment analysis.
+. *Text summarization*: Generating concise summaries of longer texts, such as news articles or research papers.
+. *Machine translation*: Translating text from one language to another, such as English to French or German to Chinese.
+. *Question answering*: Answering questions based on a given context or set of documents.
+. *Text generation*: Creating new text that is coherent, contextually relevant, and grammatically correct, such as writing articles, stories, or even poetry.
+
+Large language models typically have many parameters (millions to billions) that allow them to capture complex linguistic patterns and relationships in the data. They are trained on large datasets, such as books, articles, and websites, using techniques like unsupervised pre-training and supervised fine-tuning. Some popular large language models include GPT-3, Llama, and Mistral.
+
+In summary, a large language model (LLM) is an artificial intelligence model that uses deep learning techniques to understand and generate human-like text based on input data. They are designed to analyze vast amounts of text data and learn patterns, relationships, and structures within the data, and can be used for various natural language processing tasks.
+
+
+NOTE: To give you an idea of what an LLM can accomplish, the entire previous section was generated with a simple question against the foundational model you are using in this workshop.
+
+[#how_trained]
+=== How are Large Language Models trained?
+
+Large language models (LLMs) are typically trained using deep learning techniques and large datasets. The training process involves several steps:
+
+. *Data Collection*: A vast amount of text data is collected from various sources, such as books, articles, websites, and databases. The data may include different languages, domains, and styles to ensure the model can generalize well.
+. *Pre-processing*: The raw text data is pre-processed to remove noise, inconsistencies, and irrelevant information. This may include tokenization, lowercasing, stemming, lemmatization, and encoding.
+. *Tokenization*: The pre-processed text data is converted into tokens (words or subwords) that can be used as input and output to the model. Some models use byte-pair encoding (BPE) or subword segmentation to create tokens that can handle out-of-vocabulary words and maintain contextual information.
+. *Pre-training*: The model is trained in an unsupervised or self-supervised manner to learn patterns and structures in the data.
+. *Model Alignment*: (instruction tuning and preference tuning): The process of encoding human values and goals into large language models to make them as helpful, safe, and reliable as possible. This step is not as compute intensive as some of the other steps. 
+
+[#instructlab]
+=== How does this relate to InstructLab?
+
+InstructLab leverages a taxonomy-guided synthetic data generation process and a multi-phase tuning framework. This allows InstructLab to significantly reduce reliance on expensive human annotations, making contributing to a large language model easy and accessible. This means that InstructLab can generate data using the LLM to further train the LLM. It also means that the alignment phase becomes most user’s starting point for contributing their knowledge.  Prior to the LAB technique, users typically had no direct involvement in training an LLM. I know this may sound complicated, but hang in there. You will see how easy this is to use.
+
+As you work with InstructLab, you will see the terms Skills and Knowledge.  What is the difference between Skills and Knowledge? A simple analogy is to think of a skill as teaching someone how to fish. Knowledge, on the other hand, is knowing that the best place to catch a Bass is when the sun is setting while casting your line near the trunk of a tree along the bank.
+
+[#getting_started]
+== Getting started
+
+Install ilab command line interface
+We created a CLI tool called ilab that implements a local LLM developer experience and workflow. The ilab CLI is written in Python and works on the following architectures:
+
+. Apple M1/M2/M3 Mac
+. Linux systems
+
+We anticipate support for more operating systems in the future. The system requirements to use the command line tool are as follows:
+
+. C++ compiler
+. Python 3.9+
+. Approximately 60GB disk space (entire process)
+.. Disk space requirements are dependent on several factors. Keep in mind that we will be generating data to feed to the model while also having the model locally on our system. For example, the model we are working with during this workshop is roughly 5gb in size.
+
+[#env]
+=== Exploring your environment
+
+. View the version of Red Hat Enterprise Linux
++
+[source,sh,role=execute,subs=attributes+]
+----
+cat /etc/redhat-release
+----
++    
+[source,sh]
+----
+Red Hat Enterprise Linux release 9.4 (Plow) 
+----
+
+. View the number of CPUs
++
+[source,sh,role=execute,subs=attributes+]
+----
+nproc
+----
++
+[source,sh]
+----
+4
+----
+
+. View the Nvidia GPU installed
++
+[source,sh,role=execute,subs=attributes+]
+----
+lspci | grep -i nvidia
+----
++
+[source,sh]
+----
+00:1e.0 3D controller: NVIDIA Corporation GA102GL [A10G] (rev a1)
+----
+
+
+[#installation]
+=== Installing ilab
+
+The first thing we need to do is to source a Python virtual environment that will allow us to interact with the InstructLab command line tools.
+
+. Activate the python venv environment by running the following commands in both terminals:
++
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/instructlab
+source venv/bin/activate
+----
++
+.Your Prompt should now look like this
+
+[source,sh]
+----
+(venv) [instruct@instructlab instructlab]$ 
+----
++
+
+. Verify InstructLab has been installed. We are using a pre-release version of the upcoming InstructLab https://github.com/instructlab/instructlab/blob/main/CHANGELOG.md[v0.18].
+
++
+[source,sh,role=execute,subs=attributes+]
+----
+pip3 freeze | grep instructlab
+----
++
+[source,sh]
+----
+instructlab==0.18.0a4
+instructlab-dolomite==0.1.1
+instructlab-eval==0.1.0
+instructlab-quantize==0.1.0
+instructlab-schema==0.2.0
+instructlab-sdg==0.1.2
+instructlab-training==0.3.0
+----
++
+[source,sh,role=execute,subs=attributes+]
+----
+pip3 freeze | grep llama
+----
++
+[source,sh]
+----
+llama_cpp_python==0.2.79
+----
+
+. If InstructLab is not installed, install the following using `pip`:
++
+[source,sh,role=execute,subs=attributes+]
+----
+pip3 install 'instructlab==0.18.0a4'
+pip3 install --force-reinstall "llama_cpp_python[server]==0.2.79" --config-settings cmake.args="-DLLAMA_CUDA=on"
+pip3 install 'numpy<2.0'
+----
++
+
+NOTE: `pip install` may take some time, depending on the internet connection available at the conference or if the files have been cached locally.
+
+. From your venv environment, verify ilab is installed correctly by running the ilab command.
++
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab
+----
++
+
+Assuming that everything has been installed correctly, you should see the following output:
++
+
+[source,sh]
+----
+Usage: ilab [OPTIONS] COMMAND [ARGS]...
+
+  CLI for interacting with InstructLab.
+
+  If this is your first time running ilab, it's best to start with `ilab
+  config init` to create the environment.
+
+Options:
+  --config PATH  Path to a configuration file.  [default:
+                 /home/instruct/.config/instructlab/config.yaml]
+  -v, --verbose  Enable debug logging (repeat for even more verbosity)
+  --version      Show the version and exit.
+  --help         Show this message and exit.
+
+Commands:
+  config    Command Group for Interacting with the Config of InstructLab.
+  data      Command Group for Interacting with the Data generated by...
+  model     Command Group for Interacting with the Models in InstructLab.
+  system    Command group for all system-related command calls
+  taxonomy  Command Group for Interacting with the Taxonomy of InstructLab.
+
+Aliases:
+  chat: model chat
+  convert: model convert
+  diff: taxonomy diff
+  download: model download
+  evaluate: model evaluate
+  generate: data generate
+  init: config init
+  serve: model serve
+  sysinfo: system info
+  test: model test
+  train: model train
+----
+
+
+*Congratulations!* You now have everything installed and are ready to dive into the world of LLM alignment!
+
+[#initialize]
+== Initialize ilab
+
+Now that we know that the command-line interface `ilab` is working correctly, the next thing we need to do is initialize the local environment so that we can begin working with the model. This is accomplished by issuing a simple init command.
+
+
+Step 1: Initialize ilab by running the following command:
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab config init
+----
+.You should see the following output:
+[source,sh]
+----
+Welcome to InstructLab CLI. This guide will help you to setup your environment.
+Please provide the following values to initiate the environment [press Enter for defaults]:
+Path to taxonomy repo [/home/instruct/.local/share/instructlab/taxonomy]:
+`/home/instruct/.local/share/instructlab/taxonomy` seems to not exist or is empty. Should I clone https://github.com/instructlab/taxonomy.git for you? [y/N]: y
+Cloning https://github.com/instructlab/taxonomy.git...
+Path to your model [/home/instruct/.local/share/instructlab/models/merlinite-7b-lab-Q4_K_M.gguf]:
+Generating `/home/instruct/.config/instructlab/config.yaml`...
+Initialization completed successfully, you're ready to start using `ilab`. Enjoy!
+----
+
+[source,sh]
+----
+Path to taxonomy repo [taxonomy]:
+----
+
+NOTE: When prompted to provide the path to the taxonomy repo, hit kbd:[ENTER] 
+
+[source,sh]
+----
+`taxonomy` seems to not exist or is empty. Should I clone git@github.com:instruct-lab/taxonomy.git for you? [y/N]: y
+----
+
+NOTE: If asked if the CLI should clone the taxonomy repo, input 'y' as shown in the above output.
+
+[source,sh]
+----
+Cloning git@github.com:instruct-lab/taxonomy.git...
+Generating `config.yaml` in the current directory...
+Initialization completed successfully, you're ready to start using `ilab`. Enjoy!
+----
+
+NOTE: When asked to enter a directory for the model file, use the default and hit <ENTER>
+
+[source,sh]
+----
+Path to your model [models/merlinite-7b-lab-Q4_K_M.gguf]:
+----
+
+* Several things happen during the initialization phase: A default taxonomy is created on the local file system, and a configuration file (config.yaml) is created in the current directory.
+* The config.yaml file contains defaults we will use during this workshop. After Red Hat Summit, when you begin playing around with InstructLab, it is important to understand the contents of the configuration file so that you can tune the parameters to your liking
+
+Step 2: Use the correct config.yaml
+
+We have prepared a custom config.yaml for this workshop. Copy `config.yaml` to the correct directory.
+
+[source,sh,role=execute,subs=attributes+]
+----
+cp ~/workshop/config.yaml ~/.config/instructlab/config.yaml
+----
+
+Step 3: Change to a user friendly directory in both terminals
+
+In this workshop, we have sym linked all the necessary directories to simplify the InstructLab profile. There is a current issued filed for https://github.com/instructlab/instructlab/issues/1800[this].
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/instructlab
+----
+
+[#download]
+=== Download the model
+
+*Step 1*: Run the `ilab download` command.
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab model download
+----
+
+The ilab download command downloads a model from the HuggingFace instructlab organization that we will use for this workshop. 
+
+The output should look like the following:
+
+NOTE: *This command may not show the contents if the model is being cached on the local machine.*
+
+[source,sh]
+----
+Downloading model from instructlab/merlinite-7b-lab-GGUF@main to /home/instruct/.local/share/instructlab/models...
+Downloading 'merlinite-7b-lab-Q4_K_M.gguf' to '/home/instruct/.local/share/instructlab/models/.cache/huggingface/download/merlinite-7b-lab-Q4_K_M.gguf.9ca044d727db34750e1aeb04e3b18c3cf4a8c064a9ac96cf00448c506631d16c.incomplete'
+INFO 2024-07-21 11:19:43,051 huggingface_hub.file_download:1908: Downloading 'merlinite-7b-lab-Q4_K_M.gguf' to '/home/instruct/.local/share/instructlab/models/.cache/huggingface/download/merlinite-7b-lab-Q4_K_M.gguf.9ca044d727db34750e1aeb04e3b18c3cf4a8c064a9ac96cf00448c506631d16c.incomplete'
+merlinite-7b-lab-Q4_K_M.gguf: 100%|███████████████████████████████████████████████████| 4.37G/4.37G [00:13<00:00, 331MB/s]
+Download complete. Moving file to /home/instruct/.local/share/instructlab/models/merlinite-7b-lab-Q4_K_M.gguf
+INFO 2024-07-21 11:19:56,322 huggingface_hub.file_download:1924: Download complete. Moving file to /home/instruct/.local/share/instructlab/models/merlinite-7b-lab-Q4_K_M.gguf
+----
+
+Verify the model has been downloaded.
+
+[source,sh,role=execute,subs=attributes+]
+----
+ls models/merlinite-7b-lab-Q4_K_M.gguf
+----
+
+[source]
+----
+models/merlinite-7b-lab-Q4_K_M.gguf
+----
+
+Now that the model has been downloaded, we can serve and chat with the model. Serving the model simply means we are going to run a server that will allow other programs to interact with the data similar to making an API call. 
+
+[#serve]
+=== Serving the model
+
+Serve the model by running the following command:
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab model serve --model-path models/merlinite-7b-lab-Q4_K_M.gguf 
+----
+
+As you can see, the serve command can take an optional `-–model-path` argument. In this case, we want to serve the Merlinite model. If no model path is provided, the default value from the config.yaml file will be used.
+
+Once the model is served and ready, you’ll see the following output:
+
+[source,sh]
+----
+INFO 2024-07-21 11:21:22,670 instructlab.model.backends.llama_cpp:185: Starting server process, press CTRL+C to shutdown server...
+INFO 2024-07-21 11:21:22,670 instructlab.model.backends.llama_cpp:186: After application startup complete see http://127.0.0.1:8000/docs for API.
+----
+
+*WOOHOO!* You just served the model for the first time and are ready to test out your work so far by interacting with the LLM. We are going to accomplish this by chatting with the model.
+
+[#chat]
+=== Chat with the model
+
+In the other terminal window, Issue the following commands:
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/instructlab
+source venv/bin/activate
+----
+Your Prompt should now look like this
+[source,sh]
+----
+(venv) [instruct@instructlab instructlab]$ 
+----
+
+Now that the environment is sourced, you can begin a chat session with the ilab chat command:
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab model chat -m models/merlinite-7b-lab-Q4_K_M.gguf
+----
+
+You should see a chat prompt
+
+[source,sh]
+----
+INFO 2024-07-21 11:26:54,758 instructlab.model.backends.llama_cpp:99: Trying to connect to model server at http://127.0.0.1:8000/v1
+╭──────────────────────────────────────────────────────── system ────────────────────────────────────────────────────────╮
+│ Welcome to InstructLab Chat w/ MODELS/MERLINITE-7B-LAB-Q4_K_M.GGUF (type /h for help)                                  │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+>>>
+----
+
+
+At this point, you can interact with the model by asking it a question. Example:
+What is openshift in 20 words or less?
+
+[source,sh,role=execute,subs=attributes+]
+----
+What is openshift in 20 words or less?                                                                                                                                                                                         
+----
+
+
+
+Wait, wut? That was AWESOME!!!!! You now have your own local LLM running on this laptop. That was pretty easy, huh?
+
+
+[#training]
+=== Training and interacting with the model
+Now that you have a working environment, let’s examine the model's abilities by asking it a question related to the Instructlab project. Let's see if it can generate an answer describing the Instructlab project?
+
+Ask the model the following question using the ilab chat terminal that you have open:
+
+[source,sh,role=execute,subs=attributes+]
+----
+What is the Instructlab project?
+----
+.The answer will almost certainly be incorrect, as shown in the following output:
+[source,sh]
+----
+>>> What was the InstructLab project?                                                                         [S][default]
+╭───────────────────────────────────────── models/merlinite-7b-lab-Q4_K_M.gguf ──────────────────────────────────────────╮
+│ The InstructLab project was an innovative, European-funded research initiative that aimed to develop advanced          │
+│ bioinformatics tools and resources for structural biology researchers. Launched in 2015, the project focused on        │
+│ creating a user-friendly platform for data analysis, visualization, and interpretation of macromolecular structures.   │
+│                                                                                                                        │
+│ InstructLab brought together experts from various fields, including bioinformatics, structural biology, and            │
+│ computational chemistry, to create a comprehensive suite of tools and resources tailored for structural biologists.    │
+│ The project also emphasized training and education, offering workshops, webinars, and tutorials to help researchers    │
+│ make the most of these new resources.                                                                                  │
+│                                                                                                                        │
+│ The InstructLab platform has been instrumental in facilitating collaboration and knowledge sharing among researchers   │
+│ working on structural biology projects. It offers a range of services, such as data deposition, analysis, and          │
+│ visualization tools, enabling researchers to more efficiently tackle complex biological questions.                     │
+│                                                                                                                        │
+│ For more information about the InstructLab project, you can visit their website at <https://www.instruct-eric.eu/> or  │
+│ check out their publications on popular scientific databases like Google Scholar.                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────── elapsed 3.756 seconds ─╯
+>>>                                                                                                           [S][default
+----
+
+Wow, that was both pretty awesome and sad at the same time! Kudos for it generating a response that appears to be very accurate and it was very confident in doing so. However, it is incorrect. The description of the Instructlab project was completely wrong and although it looks detailed, some of the information it generated is not about this particular project These errors are often referred to as a “hallucination” in the LLM space. Model alignment (like you’re about to do) is one of the ways to improve a model’s answers and avoid hallucinations. In this workshop we are going to focus on adding a new knowledge to the model so that it knows more about the Instructlab project.. 
+
+Let’s get to work and fix this.
+
+When you are done exploring the model, exit the chat by issuing the exit command:
+
+[source,sh,role=execute,subs=attributes+]
+----
+>>> exit                                                                   
+----
+
+This is where the real fun begins! We are now going to improve the model by leveraging the Taxonomy structure that is part of the InstructLab project.
+
+[#taxononmy]
+=== Understanding Taxonomy
+
+InstructLab uses a novel synthetic data-based alignment tuning method for Large Language Models (LLMs.) The "lab" in InstructLab stands for **L**arge-scale **A**lignment for Chat **B**ots.
+
+The LAB method is driven by taxonomies, which are largely created manually and with care.
+
+InstructLab crowdsources the process of tuning and improving models by collecting two types of data: knowledge and skills in a new open source community. These submissions are collected in a taxonomy of YAML files to be used in the synthetic data generation process. To help you understand the directory structure of a taxonomy, please refer to the following image.
+  
+
+We are now going to leverage the taxonomy model to teach the model the knowledge on the Instructlab project
+
+*Step 1*: Verify you have the taxonomy directory in the working directory you are in.
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/instructlab
+tree taxonomy/  | head
+----
+.you should see the taxonomy directory listed as shown below:
+[source,texinfo]
+----
+taxonomy/
+├── CODE_OF_CONDUCT.md
+├── compositional_skills
+│   ├── extraction
+│   │   ├── abstractive
+│   │   │   ├── abstract
+│   │   │   │   └── qna.yaml
+│   │   │   ├── key_points
+│   │   │   │   └── qna.yaml
+│   │   │   ├── main_takeaway
+----
+
+Now, we need to create a directory where we can place our files.
+
+*Step 2*: Create a directory to add new knowledge showing how to properly generate a knowledge on xxxx 
+
+[source,sh,role=execute,subs=attributes+]
+----
+mkdir -p ~/instructlab/taxonomy/knowledge/instructlab/overview
+----
+
+*Step 3*: Add a new knowledge.
+
+The way the taxonomy approach works is that we provide a file, named qna.yaml, that contains a sample data set of questions and answers. This data set will be used in the process of creating many more synthetic data examples.  The important thing to understand about the qna.yaml file is that it must follow a specific schema for InstructLab to use it to synthetically generate more examples. 
+Instead of having to type a bunch of information in by hand, simply run the following command to copy the qna.yaml file to your taxonomy directory:
+
+[source,sh,role=execute,subs=attributes+]
+----
+cp -av ~/workshop/ilab-qna.yaml ~/instructlab/taxonomy/knowledge/instructlab/overview/qna.yaml
+----
+
+You can then verify the file was correctly copied by issuing the following command which will display the first 10 lines of the file:
+
+[source,sh,role=execute,subs=attributes+]
+----
+head ~/instructlab/taxonomy/knowledge/instructlab/overview/qna.yaml
+----
+
+During this workshop, we don’t expect you to type all of this information in by hand - we are including the content here for your reference.
+
+It's a YAML file that consists of a list of Q&A examples that will be used by the trainer model to teach the student model.  
+There is also a source document which is a link to a specific commit of a text file in git.
+
+[source,yaml]
+----
+created_by: instructlab-team
+domain: instructlab
+seed_examples:
+- answer: InstructLab is a model-agnostic open source AI project that facilitates
+    contributions to Large Language Models (LLMs).
+    We are on a mission to let anyone shape generative AI by enabling contributed
+    updates to existing LLMs in an accessible way. Our community welcomes all those who
+    would like to help us enable everyone to shape the future of generative AI.
+  question: What is InstructLab?
+- answer: Check out the Instructlab Community README to get started
+    with using and contributing to the project.
+    If you want to jump right in, head to the InstructLab CLI
+    documentation to get InstructLab set up and running.
+    Learn more about the skills and knowledge you can add to models.
+    You may wish to read through the project's FAQ to get more familiar
+    with all aspects of InstructLab. You can find all the ways to
+    collaborate with project maintainers and your fellow users of
+    InstructLab beyond GitHub by visiting our project collaboration page.
+  question: How to get started with InstructLab
+- answer: There are many projects rapidly embracing and extending
+    permissively licensed AI models, but they are faced with three
+    main challenges like Contribution to LLMs is not possible directly.
+    They show up as forks, which forces consumers to choose a “best-fit”
+    model that is not easily extensible. Also, the forks are expensive
+    for model creators to maintain. The ability to contribute ideas is
+    limited by a lack of AI/ML expertise. One has to learn how to fork,
+    train, and refine models to see their idea move forward.
+    This is a high barrier to entry. There is no direct community
+    governance or best practice around review, curation, and
+    distribution of forked models.
+  question: What problems is Instructlab aiming to solve?
+- answer: InstructLab was created by Red Hat and IBM Research.
+  question: Who created Instructlab?
+- answer: The project enables community contributors to add
+    additional "skills" or "knowledge" to a particular model. InstructLab's
+    model-agnostic technology gives model upstreams with sufficient
+    infrastructure resources the ability to create regular builds of
+    their open source licensed models not by rebuilding and retraining
+    the entire model but by composing new skills into it.
+    The community welcomes all those who would like to help enable
+    everyone to shape the future of generative AI.
+  question: How does Instructlab enable community collaboration?
+- answer: Yes, InstructLab is a model-agnostic open source AI project
+    that facilitates contributions to Large Language Models (LLMs).
+  question: Is Instructlab an open source project?
+- answer: InstructLab uses a novel synthetic data-based alignment
+    tuning method for Large Language Models (LLMs.)
+    The "lab" in InstructLab stands for Large-Scale Alignment for ChatBots
+  question: What is the tuning method for Instructlab?
+- answer: The mission of instructlab is to let everyone shape generative AI
+    by enabling contributed updates to existing LLMs in an accessible way.
+    The community welcomes all those who would like to help enable everyone
+    to shape the future of generative AI.
+  question: What is the mission of Instructlab?
+task_description: 'Details on instructlab community project'
+document:
+  repo: https://github.com/instructlab/.github
+  commit: 83d9852ad97c6b27d4b24508f7cfe7ff5dd04d0d
+  patterns:
+    - README.md
+----
+
+
+*Step 4*: Verification
+
+InstructLab allows you to validate your taxonomy files before generating additional data. You can accomplish this by using the ilab diff command as shown below:
+
+NOTE: Make sure you are still in the virtual environment indicated by the (venv) on the command line. If not, source the venv/bin/activate file again.
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab taxonomy diff
+
+----
+.You should see the following output:
+[source,sh]
+----
+Taxonomy in /home/instruct/.local/share/instructlab/taxonomy is valid :)
+----
+
+
+*Step 5*: Generate synthetic data
+Okay, so far so good. Now, let’s move on to the AWESOME part. We are going to use our taxonomy, which contains our qna.yaml file, to have the LLM automatically generate more examples. The generate step can often take a while and is dependent on the number of instructions that you want to generate. In other words, this means that InstructLab will generate X number of additional questions and answers based on the samples provided. To give you an idea of how long this takes, generating 100 additional questions and answers typically takes about 7 minutes when using a nicely specced consumer-grade GPU-accelerated Linux machine. This can take around 15 minutes using Apple Silicon and depends on many factors. For the purpose of this workshop, we are only going to generate 5 additional samples. To do this, issue the following commands:
+
+First, we want to stop the current server by hitting kbd:[CTRL+c]:
+
+[source,sh]
+----
+INFO 2024-05-06 18:41:08,496 server.py:197 After application startup complete see http://127.0.0.1:8000/docs for API.
+^C
+Aborted!
+----
+
+We will then serve the merlinite model, which will serve as the teacher model for the purposes of our synthetic data generation:
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/instructlab
+ilab model serve --model-path models/merlinite-7b-lab-Q4_K_M.gguf
+----
+
+We will now run the command (in the second Terminal) to generate the synthetic data:
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab data generate --num-instructions 50 --num-cpus 4
+----
+
+After running this command, you should see the magic happen! InstructLab is now synthetically generating 5 examples based on the seed data you provided in the qna.yaml file. Take a look at the generated questions and answers to see what the model has created! 
+
+[source,sh]
+----
+INFO 2024-07-21 11:54:49,983 numexpr.utils:161: NumExpr defaulting to 4 threads.
+INFO 2024-07-21 11:54:50,151 datasets:58: PyTorch version 2.3.1 available.
+INFO 2024-07-21 11:54:50,719 instructlab.model.backends.llama_cpp:99: Trying to connect to model server at http://127.0.0.1:8000/v1
+Generating synthetic data using '/home/instruct/.local/share/instructlab/models/merlinite-7b-lab-Q4_K_M.gguf' model, taxonomy:'/home/instruct/.local/share/instructlab/taxonomy' against http://127.0.0.1:8000/v1 server
+INFO 2024-07-21 11:54:51,099 instructlab.sdg:302: Synthesizing new instructions. If you aren't satisfied with the generated instructions, interrupt training (Ctrl-C) and try adjusting your YAML files. Adding more examples may help.
+INFO 2024-07-21 11:54:53,874 instructlab.sdg.llmblock:32: LLM server supports batched inputs: False
+INFO 2024-07-21 11:54:53,874 instructlab.sdg.pipeline:41: Running block: gen_knowledge
+INFO 2024-07-21 11:54:53,874 instructlab.sdg.pipeline:42: Dataset({
+    features: ['task_description', 'domain', 'document', 'icl_query_1', 'icl_response_1', 'icl_query_2', 'icl_response_2', 'icl_query_3', 'icl_response_3'],
+    num_rows: 3
+})
+INFO 2024-07-21 11:55:11,870 instructlab.sdg:329: Generated 1 samples
+INFO 2024-07-21 11:55:11,874 instructlab.sdg:349: Generation took 21.15s
+----
+
+You can view the datasets here:
+[source,sh,role=execute,subs=attributes+]
+----
+ls datasets/
+----
+
+[source,sh]
+----
+messages_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl  train_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl
+test_merlinite-7b-lab-Q4_K_M_2024-07-21T11_54_51.jsonl
+----
+
+Holy Smokes! That was awesome, right?
+
+NOTE: Generating 5 additional examples is generally not enough to effectively impact the knowledge or skill of a model. However, due to time constraints of this workshop, the goal is to simply show you how this works using real commands. You would typically want to generate 100 or even 1000 additional data points. Even still, training on a laptop is more of a technology demonstration than something you’d want to do to train production LLMs.  For training production LLMs, Red Hat provides RHEL AI and OpenShift AI.
+Once the new data has been generated, the next step is to train the model with the updated skill. This is performed with the `ilab train` command. However, we are not going to perform the full training and part of this workshop due to time constraints.
+
+You can do a simple training using 10 iterations. We have pretrained a model with 100 iterations that takes about 30mins on this environment. 
+
+Remember to quit the model serving by kbd:[CTRL+C] in the other terminal. You will need the GPU for training.
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab ilab model train --device cuda --iters 10 --legacy
+----
+
+[source,sh,role=execute,subs=attributes+]
+----
+INFO 2024-07-21 11:57:12,171 numexpr.utils:161: NumExpr defaulting to 4 threads.
+INFO 2024-07-21 11:57:12,291 datasets:58: PyTorch version 2.3.1 available.
+[2024-07-21 11:57:19,215] [INFO] [real_accelerator.py:203:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+ [WARNING]  async_io requires the dev libaio .so object and headers but these were not found.
+ [WARNING]  If libaio is already installed (perhaps from source), try setting the CFLAGS and LDFLAGS environment variables to where it can be found.
+ [WARNING]  Please specify the CUTLASS repo directory as environment variable $CUTLASS_PATH
+ [WARNING]  sparse_attn requires a torch version >= 1.5 and < 2.0 but detected 2.3
+ [WARNING]  using untested triton version (2.3.1), only 1.0.0 is known to be compatible
+LINUX_TRAIN.PY: NUM EPOCHS IS:  10
+LINUX_TRAIN.PY: TRAIN FILE IS:  /home/instruct/.local/share/instructlab/datasets/train_gen.jsonl
+LINUX_TRAIN.PY: TEST FILE IS:  /home/instruct/.local/share/instructlab/datasets/test_gen.jsonl
+LINUX_TRAIN.PY: Using device 'cuda:0'
+  NVidia CUDA version: 12.1
+  AMD ROCm HIP version: n/a
+  cuda:0 is 'NVIDIA A10G' (16.8 GiB of 22.1 GiB free, capability: 8.6)
+  WARNING: You have less than 18253611008 GiB of free GPU memory on '{index}'. Training may fail, use slow shared host memory, or move some layers to CPU.
+  Training does not use the local InstructLab serve. Consider stopping the server to free up about 5 GiB of GPU memory.
+LINUX_TRAIN.PY: LOADING DATASETS
+Generating train split: 29 examples [00:00, 2246.34 examples/s]
+Generating train split: 8 examples [00:00, 4799.66 examples/s]
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message.
+Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+LINUX_TRAIN.PY: NOT USING 4-bit quantization
+LINUX_TRAIN.PY: LOADING THE BASE MODEL
+Loading checkpoint shards: 100%|████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  4.14it/s]
+LINUX_TRAIN.PY: Model device cuda:0
+|===========================================================================|
+|                  PyTorch CUDA memory summary, device ID 0                 |
+|---------------------------------------------------------------------------|
+|            CUDA OOMs: 0            |        cudaMalloc retries: 0         |
+|===========================================================================|
+|        Metric         | Cur Usage  | Peak Usage | Tot Alloc  | Tot Freed  |
+|---------------------------------------------------------------------------|
+| Allocated memory      |  12852 MiB |  12852 MiB |  12852 MiB |      0 B   |
+|       from large pool |  12852 MiB |  12852 MiB |  12852 MiB |      0 B   |
+|       from small pool |      0 MiB |      0 MiB |      0 MiB |      0 B   |
+|---------------------------------------------------------------------------|
+| Active memory         |  12852 MiB |  12852 MiB |  12852 MiB |      0 B   |
+|       from large pool |  12852 MiB |  12852 MiB |  12852 MiB |      0 B   |
+|       from small pool |      0 MiB |      0 MiB |      0 MiB |      0 B   |
+|---------------------------------------------------------------------------|
+| Requested memory      |  12852 MiB |  12852 MiB |  12852 MiB |      0 B   |
+|       from large pool |  12852 MiB |  12852 MiB |  12852 MiB |      0 B   |
+|       from small pool |      0 MiB |      0 MiB |      0 MiB |      0 B   |
+|---------------------------------------------------------------------------|
+| GPU reserved memory   |  12858 MiB |  12858 MiB |  12858 MiB |      0 B   |
+|       from large pool |  12856 MiB |  12856 MiB |  12856 MiB |      0 B   |
+|       from small pool |      2 MiB |      2 MiB |      2 MiB |      0 B   |
+|---------------------------------------------------------------------------|
+| Non-releasable memory |   5480 KiB |   5480 KiB |   6015 KiB | 548352 B   |
+|       from large pool |   3968 KiB |   3968 KiB |   3968 KiB |      0 B   |
+|       from small pool |   1512 KiB |   2047 KiB |   2047 KiB | 548352 B   |
+|---------------------------------------------------------------------------|
+| Allocations           |     323    |     323    |     323    |       0    |
+|       from large pool |     226    |     226    |     226    |       0    |
+|       from small pool |      97    |      97    |      97    |       0    |
+|---------------------------------------------------------------------------|
+| Active allocs         |     323    |     323    |     323    |       0    |
+|       from large pool |     226    |     226    |     226    |       0    |
+|       from small pool |      97    |      97    |      97    |       0    |
+|---------------------------------------------------------------------------|
+| GPU reserved segments |     227    |     227    |     227    |       0    |
+|       from large pool |     226    |     226    |     226    |       0    |
+|       from small pool |       1    |       1    |       1    |       0    |
+|---------------------------------------------------------------------------|
+| Non-releasable allocs |       3    |       3    |       3    |       0    |
+|       from large pool |       2    |       2    |       2    |       0    |
+|       from small pool |       1    |       1    |       1    |       0    |
+|---------------------------------------------------------------------------|
+| Oversize allocations  |       0    |       0    |       0    |       0    |
+|---------------------------------------------------------------------------|
+| Oversize GPU segments |       0    |       0    |       0    |       0    |
+|===========================================================================|
+
+LINUX_TRAIN.PY: SANITY CHECKING THE BASE MODEL
+100%|███████████████████████████████████████████████████████████████████████████████████████| 8/8 [01:12<00:00,  9.12s/it]
+LINUX_TRAIN.PY: GETTING THE ATTENTION LAYERS
+LINUX_TRAIN.PY: CONFIGURING LoRA
+/home/instruct/ilab/instruct/lib64/python3.11/site-packages/huggingface_hub/utils/_deprecation.py:100: FutureWarning: Deprecated argument(s) used in '__init__': max_seq_length. Will not be supported from version '1.0.0'.
+
+Deprecated positional argument(s) used in SFTTrainer, please use the SFTConfig to set these arguments instead.
+  warnings.warn(message, FutureWarning)
+/home/instruct/ilab/instruct/lib64/python3.11/site-packages/trl/trainer/sft_trainer.py:280: UserWarning: You passed a `max_seq_length` argument to the SFTTrainer, the value you passed will override the one in the `SFTConfig`.
+  warnings.warn(
+Map: 100%|███████████████████████████████████████████████████████████████████████| 29/29 [00:00<00:00, 1425.53 examples/s]
+Map: 100%|█████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 1299.45 examples/s]
+LINUX_TRAIN.PY: TRAINING
+  0%|                                                                                             | 0/290 [00:00<?, ?it/s]We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+{'train_runtime': 46.067, 'train_samples_per_second': 6.295, 'train_steps_per_second': 6.295, 'train_loss': 0.9097055369410022, 'epoch': 10.0}
+100%|███████████████████████████████████████████████████████████████████████████████████| 290/290 [00:46<00:00,  6.29it/s]
+LINUX_TRAIN.PY: RUNNING INFERENCE ON THE OUTPUT MODEL
+
+===
+test 0
+===
+
+
+===
+user
+===
+
+What is InstructLab?
+
+===
+assistant_old
+===
+
+InstructLab is an innovative educational platform designed to revolutionize teaching and learning experiences by leveraging advanced technologies such as artificial intelligence, virtual reality, and interactive simulations. This platform caters to various disciplines, including biology, chemistry, and physics, providing immersive and engaging learning environments for students.
+
+InstructLab offers several key features:
+
+1. **Interactive Simulations:** Realistic 3D models and animations enable students to explore complex concepts and processes in a user-friendly and interactive manner.
+2. **Augmented Reality (AR) Experiences:** InstructLab integrates AR technology to bring static models to life, allowing students to manipulate and observe their physical properties in real-time.
+3. **Virtual Reality (VR) Explorations:** The platform offers VR experiences that transport students to immersive environments, enhancing their understanding of intricate concepts and phenomena.
+4. **Adaptive Learning:** InstructLab's AI-driven system adjusts the content and difficulty level based on students' performance, ensuring an optimal learning experience tailored to their needs.
+5
+
+===
+assistant_new
+===
+
+'InstructLab' is an innovative AI assistant designed to facilitate human-computer interaction, offering a wide array of capabilities that cater to various needs and tasks. It is specifically engineered to help users learn, teach, and collaborate effectively.
+
+As a versatile AI assistant, InstructLab can provide explanations on a diverse range of topics, making it an excellent learning resource for individuals of all ages and backgrounds. It is capable of understanding and addressing complex inquiries, ensuring that users receive accurate and comprehensive responses.
+
+Moreover, InstructLab is designed to foster collaboration and knowledge-sharing. It can facilitate group discussions, manage project timelines, and provide real-time updates, making it an ideal tool for educational institutions, remote teams, and anyone looking to streamline their workflow and enhance productivity.
+
+InstructLab's mission is to empower users by offering an intuitive, user-friendly interface that simplifies complex tasks and encourages exploration. By continuously learning and adapting to user needs, InstructLab aims to become an indispensable tool for personal growth, learning, and collaboration.
+
+If
+
+===
+assistant_expected
+===
+
+InstructLab is a model-agnostic open source AI project that facilitates contributions to Large Language Models (LLMs). We are on a mission to let anyone shape generative AI by enabling contributed updates to existing LLMs in an accessible way. Our community welcomes all those who would like to help us enable everyone to shape the future of generative AI.
+
+===
+test 1
+===
+
+
+===
+user
+===
+
+How to get started with InstructLab
+
+===
+assistant_old
+===
+
+1. Visit the InstructLab website (<https://www.instructlab.com/>) and navigate to the "Get Started" section.
+    2. Fill out the registration form with your details to create an account.
+    3. After account activation, log in and explore the user-friendly dashboard.
+    4. Familiarize yourself with the platform's features by watching tutorials and reading documentation.
+    5. To create your first interactive learning activity, click on the "Create New Activity" button.
+    6. Choose the desired activity type (Quiz, Lab, or Flip Classroom) and follow the step-by-step instructions to set up the activity.
+    7. Upload or integrate relevant resources, such as multimedia files, documents, or links.
+    8. Design the activity flow by adding interactive elements like questions, simulations, or exercises.
+    9. Preview the activity to ensure it functions as expected and looks appealing to your students.
+    10. Publish the activity and share the link with your students.
+
+By following these steps, you'll be well on your way to creating engaging and interactive learning experiences
+
+===
+assistant_new
+===
+
+'Getting started with InstructLab is an exciting endeavor! InstructLab is an AI-powered platform that enables you to create, train, and fine-tune large language models. Here are some detailed steps to help you get started:
+
+1. **Create an InstructLab Account**: Visit the InstructLab website and sign up for an account. This process involves providing essential information to ensure a smooth and secure user experience.
+
+2. **Explore the User Interface**: Once your account is set up, familiarize yourself with the InstructLab dashboard. This interface allows you to manage your projects, access tutorials, and monitor model performance.
+
+3. **Create a Project**: To begin, click on 'Create Project' and provide a name and description for your project. This will help you organize your work and collaborate with others if needed.
+
+4. **Design your Dataset**: InstructLab supports various datasets, including text, images, and code. Design your dataset by gathering and preparing the data you want to use for training your model.
+
+5. **Choose a Model Type**: Select the appropriate model type based on
+
+===
+assistant_expected
+===
+
+Check out the Instructlab Community README to get started with using and contributing to the project. If you want to jump right in, head to the InstructLab CLI documentation to get InstructLab set up and running. Learn more about the skills and knowledge you can add to models. You may wish to read through the project's FAQ to get more familiar with all aspects of InstructLab. You can find all the ways to collaborate with project maintainers and your fellow users of InstructLab beyond GitHub by visiting our project collaboration page.
+
+===
+test 2
+===
+
+
+===
+user
+===
+
+What problems is Instructlab aiming to solve?
+
+===
+assistant_old
+===
+
+1. **Lack of Personalization:** Traditional learning platforms often provide a one-size-fits-all approach, which may not cater to individual learning styles, paces, or preferences.
+
+    2. **Passive Learning Experience:** Instructlab aims to enhance student engagement by transforming the learning experience from passive to active, enabling students to contribute to the course content and interact with their peers.
+
+    3. **Scalability:** Instructlab addresses the challenge of delivering high-quality education to large numbers of students while maintaining personalization and engagement.
+
+    4. **Limited Teacher Support:** Instructlab seeks to alleviate the burden on teachers by providing tools that automate certain tasks, allowing them to focus more on student interaction and personalized feedback.
+
+    5. **Accessibility:** Instructlab aims to make education more accessible by offering interactive and engaging content that caters to students with different learning needs and abilities.
+
+By focusing on these problems, Instructlab aims to create a more effective, engaging, and accessible learning environment for students and teachers al
+
+===
+assistant_new
+===
+
+'Instructlab is designed to tackle the challenges faced by users when seeking assistance from AI models, such as understanding context, providing detailed explanations, and handling follow-up questions. By addressing these issues, we strive to create a more effective and engaging AI assistant experience.'
+
+===
+assistant_expected
+===
+
+There are many projects rapidly embracing and extending permissively licensed AI models, but they are faced with three main challenges like Contribution to LLMs is not possible directly. They show up as forks, which forces consumers to choose a “best-fit” model that is not easily extensible. Also, the forks are expensive for model creators to maintain. The ability to contribute ideas is limited by a lack of AI/ML expertise. One has to learn how to fork, train, and refine models to see their idea move forward. This is a high barrier to entry. There is no direct community governance or best practice around review, curation, and distribution of forked models.
+
+===
+test 3
+===
+
+
+===
+user
+===
+
+Who created Instructlab?
+
+===
+assistant_old
+===
+
+Instructlab is an educational technology platform that offers a variety of tools and resources for creating interactive and engaging learning experiences. The company was founded in 2011 by a team of experienced educators, instructional designers, and technologists with a shared passion for improving learning outcomes through innovative technology solutions.
+
+Instructlab's mission is to empower educators and learners by providing a user-friendly platform that simplifies the creation of interactive educational content. The platform supports various multimedia formats, such as videos, quizzes, presentations, and discussions, allowing educators to create immersive and personalized learning environments.
+
+The company has received recognition for its commitment to innovation and educational excellence, having won several awards, including the "Best of EdTech" award from Tech & Learning magazine and the "Brilliant Solution" award from the Software & Information Industry Association (SIIA).
+
+If you have any specific questions about Instructlab or its features, feel free to ask! I'm here to help.
+
+===
+assistant_new
+===
+
+'Instructlab' is a transformative AI language model, designed to assist and collaborate with users in generating and refining content. It is an advanced AI language model that has been trained on an extensive corpus of text data, enabling it to generate human-like responses and facilitate a more interactive user experience.
+
+As a helpful assistant, I can provide insights on a wide array of topics, answer questions, offer explanations, and even assist in generating code or creating original content. However, I must clarify that Instructlab is not associated with any specific individual or organization, as it is a collective effort of researchers and developers working towards advancing AI technology.
+
+My purpose is to offer you accurate, relevant, and engaging information while fostering a positive and informative conversation. If you have any questions or need assistance with a specific topic, please feel free to ask!
+
+===
+assistant_expected
+===
+
+InstructLab was created by Red Hat and IBM Research.
+
+===
+test 4
+===
+
+
+===
+user
+===
+
+How does Instructlab enable community collaboration?
+
+===
+assistant_old
+===
+
+Instructlab is an online platform designed to facilitate community collaboration in educational settings. It offers a variety of features that make it easy for users to work together on projects, share resources, and engage in discussions. Here's a more detailed overview of how Instructlab enables community collaboration:
+
+1. **User Authentication:** Instructlab requires users to sign up for an account, allowing for a more structured and managed learning environment. This feature ensures that only verified individuals can participate in collaborative activities, promoting trust and security.
+
+2. **Collaborative Project Management:** Instructlab provides tools for managing group projects, such as shared calendars, to-do lists, and file repositories. These features enable users to organize their work, assign tasks, and track progress efficiently.
+
+3. **Real-time Communication:** Instructlab supports real-time communication through comments, chat, and video conferencing. This feature allows users to discuss ideas, provide feedback, and clarify doubts instantly, fostering instantaneous interaction and collaboration.
+
+4. **Content Sharing:** Instructlab enables users to share various types of content, such as documents,
+
+===
+assistant_new
+===
+
+'Instructlab is a platform that fosters community collaboration by enabling users to create, share, and learn from educational content. It encourages users to contribute to and engage with various subjects, enhancing the overall learning experience.
+
+===
+assistant_expected
+===
+
+The project enables community contributors to add additional "skills" or "knowledge" to a particular model. InstructLab's model-agnostic technology gives model upstreams with sufficient infrastructure resources the ability to create regular builds of their open source licensed models not by rebuilding and retraining the entire model but by composing new skills into it. The community welcomes all those who would like to help enable everyone to shape the future of generative AI.
+
+===
+test 5
+===
+
+
+===
+user
+===
+
+Is Instructlab an open source project?
+
+===
+assistant_old
+===
+
+Instructlab is not an open-source project, as it is a commercial software platform designed to support the creation and management of interactive educational content. The Instructlab website does not provide any information about its source code or licensing, which typically indicates that it is proprietary software.
+
+There are several factors to consider when evaluating open-source software, such as cost, customization options, community support, and the ability to modify and distribute the software. Since Instructlab is not open-source, these factors may differ from what you would experience with open-source alternatives.
+
+If you are interested in open-source educational software, there are many options available, such as Moodle, OpenStudy, and Blackboard Learn. These platforms offer a range of features for creating and delivering online courses, managing student interactions, and tracking learning outcomes.
+
+It's essential to evaluate the specific needs of your educational project and compare the features, costs, and licensing terms of various software options. This will help you make an informed decision about the best solution for your needs.
+
+If you have any questions about open-source software or alternative educational technologies, feel free to ask
+
+===
+assistant_new
+===
+
+'Instructlab' is an open-source AI project that enables developers to create AI-powered conversational agents. The project is built on top of the InstructGPT model, which is an open-source variant of the GPT-3 model. This means that anyone can contribute to the project's development, improve its functionality, and use it for various applications.
+
+'InstructGPT' is a transformer-based language model that can be fine-tuned for a wide range of tasks, such as text generation, question-answering, and dialogue. It is designed to follow instructions and generate coherent and contextually relevant responses.
+
+The open-source nature of 'InstructGPT' and other AI models like it promotes collaboration, innovation, and transparency in the AI community. It allows developers to learn from each other, build upon existing work, and create more advanced and capable AI systems.
+
+If you'd like to learn more about how to contribute to 'InstructGPT' or any other open-source AI project, I'd be happy to provide more information or resources.
+
+===
+assistant_expected
+===
+
+Yes, InstructLab is a model-agnostic open source AI project that facilitates contributions to Large Language Models (LLMs).
+
+===
+test 6
+===
+
+
+===
+user
+===
+
+What is the tuning method for Instructlab?
+
+===
+assistant_old
+===
+
+1. **Mutual Information (MI)**: This method measures the amount of shared information between the model's output and the target label. It helps to identify the most informative features for the model to learn.
+
+    2. **AUC ROC Curve**: This method evaluates the model's performance by measuring the area under the ROC curve. It provides insights into the model's ability to distinguish between positive and negative classes.
+
+    3. **Accuracy**: This method calculates the proportion of correct predictions made by the model. It is a common metric for evaluating the model's performance, but it may not be the most suitable choice for imbalanced datasets.
+
+    4. **Precision**: This method measures the proportion of true positive predictions among all positive predictions made by the model. It is useful when minimizing false positives is important.
+
+    5. **Recall (Sensitivity)**: This method measures the proportion of true positive predictions among all actual positive instances in the dataset. It is useful when minimizing false negatives is important.
+
+    6. **F1-Score**: This method combines precision
+
+===
+assistant_new
+===
+
+'Tuning' in the context of Instructlab refers to the process of optimizing the performance of the large language model (LLM) by adjusting various hyperparameters. These hyperparameters are configuration variables that control the learning algorithm and can significantly impact the model's behavior.
+
+The tuning process involves evaluating the model's performance on a validation set while incrementally adjusting the hyperparameters. This allows you to find the optimal combination of hyperparameters that yield the best possible performance, balancing factors such as model complexity, training time, and generalization.
+
+Some common hyperparameters that you may want to tune for Instructlab include:
+
+1. Learning rate: Controls the contribution of new information to the model's parameters during training.
+2. Batch size: Determines the number of training examples processed in each iteration.
+3. Layer size: Affects the number of neurons in each layer of the neural network.
+4. Regularization strength: Controls the amount of regularization applied to prevent overfitting.
+5. Number of epochs: Specifies the number of times the learning algorithm will iterate over the training data.
+
+Tuning these hyper
+
+===
+assistant_expected
+===
+
+InstructLab uses a novel synthetic data-based alignment tuning method for Large Language Models (LLMs.) The "lab" in InstructLab stands for Large-Scale Alignment for ChatBots
+
+===
+test 7
+===
+
+
+===
+user
+===
+
+What is the mission of Instructlab?
+
+===
+assistant_old
+===
+
+Instructlab is an online platform that aims to revolutionize the way we learn and teach. It serves as a versatile and collaborative environment for creating, sharing, and managing educational resources. Instructlab's mission is to empower educators, students, and lifelong learners by providing an intuitive and engaging platform that fosters active learning and encourages the exchange of knowledge.
+
+The platform offers a wide range of tools for creating interactive and multimedia-rich content, such as quizzes, assignments, discussions, and multimedia presentations. By leveraging these tools, instructors can engage students in active learning, promote collaboration, and assess student progress with ease.
+
+Instructlab's mission also extends to making education more accessible and affordable. The platform supports open educational resources (OER), enabling instructors to share and reuse high-quality educational materials, thereby reducing the cost of education for students.
+
+Moreover, Instructlab is committed to fostering a global community of learners and educators. The platform supports multiple languages and offers localized resources, making education more accessible to people worldwide. By facilitating collaboration and knowledge sharing, Instructlab a
+
+===
+assistant_new
+===
+
+'Instructlab is a research collaboration between IBM Research and the University of Washington, with the mission to make large-scale AI learning more accessible and effective. The project focuses on developing innovative techniques and tools that enable users to create, train, and interact with large-scale models, making it easier for researchers and developers to leverage AI technology for a wide range of applications. Instructlab's ultimate goal is to foster a more inclusive and diverse AI community, empowering individuals and organizations to build and utilize AI models that benefit everyone.'
+
+===
+assistant_expected
+===
+
+The mission of instructlab is to let everyone shape generative AI by enabling contributed updates to existing LLMs in an accessible way. The community welcomes all those who would like to help enable everyone to shape the future of generative AI.
+LINUX_TRAIN.PY: MERGING ADAPTERS
+LINUX_TRAIN.PY: FINISHED
+Copied training_results/checkpoint-1054/added_tokens.json to training_results/final
+Copied training_results/checkpoint-1054/special_tokens_map.json to training_results/final
+Copied training_results/checkpoint-1054/tokenizer.json to training_results/final
+Copied training_results/checkpoint-1054/tokenizer.model to training_results/final
+Copied training_results/checkpoint-1054/tokenizer_config.json to training_results/final
+Copied training_results/merged_model/config.json to training_results/final
+Copied training_results/merged_model/generation_config.json to training_results/final
+Moved training_results/merged_model/model-00001-of-00003.safetensors to training_results/final
+Moved training_results/merged_model/model-00002-of-00003.safetensors to training_results/final
+Moved training_results/merged_model/model-00003-of-00003.safetensors to training_results/final
+Loading model file training_results/final/model-00001-of-00003.safetensors
+Loading model file training_results/final/model-00001-of-00003.safetensors
+Loading model file training_results/final/model-00002-of-00003.safetensors
+Loading model file training_results/final/model-00003-of-00003.safetensors
+params = Params(n_vocab=32008, n_embd=4096, n_layer=32, n_ctx=4096, n_ff=11008, n_head=32, n_head_kv=32, n_experts=None, n_experts_used=None, f_norm_eps=1e-05, rope_scaling_type=None, f_rope_freq_base=10000.0, f_rope_scale=None, n_orig_ctx=None, rope_finetuned=None, ftype=None, path_model=PosixPath('training_results/final'))
+Found vocab files: {'spm': PosixPath('training_results/final/tokenizer.model'), 'bpe': None, 'hfft': PosixPath('training_results/final/tokenizer.json')}
+Loading vocab file PosixPath('training_results/final/tokenizer.model'), type 'spm'
+Vocab info: <SentencePieceVocab with 32000 base tokens and 5 added tokens>
+Special vocab info: <SpecialVocab with 0 merges, special tokens {'bos': 1, 'eos': 32000, 'unk': 0, 'pad': 32000}, add special tokens {'bos': False, 'eos': False}>
+Permuting layer 0
+Permuting layer 1
+Permuting layer 2
+Permuting layer 3
+Permuting layer 4
+Permuting layer 5
+Permuting layer 6
+Permuting layer 7
+Permuting layer 8
+Permuting layer 9
+Permuting layer 10
+Permuting layer 11
+Permuting layer 12
+Permuting layer 13
+Permuting layer 14
+Permuting layer 15
+Permuting layer 16
+Permuting layer 17
+Permuting layer 18
+Permuting layer 19
+Permuting layer 20
+Permuting layer 21
+Permuting layer 22
+Permuting layer 23
+Permuting layer 24
+Permuting layer 25
+Permuting layer 26
+Permuting layer 27
+Permuting layer 28
+Permuting layer 29
+Permuting layer 30
+Permuting layer 31
+model.embed_tokens.weight                        -> token_embd.weight                        | BF16   | [32008, 4096]
+model.layers.0.input_layernorm.weight            -> blk.0.attn_norm.weight                   | BF16   | [4096]
+model.layers.0.mlp.down_proj.weight              -> blk.0.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.0.mlp.gate_proj.weight              -> blk.0.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.0.mlp.up_proj.weight                -> blk.0.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.0.post_attention_layernorm.weight   -> blk.0.ffn_norm.weight                    | BF16   | [4096]
+model.layers.0.self_attn.k_proj.weight           -> blk.0.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.0.self_attn.o_proj.weight           -> blk.0.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.0.self_attn.q_proj.weight           -> blk.0.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.0.self_attn.v_proj.weight           -> blk.0.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.1.input_layernorm.weight            -> blk.1.attn_norm.weight                   | BF16   | [4096]
+model.layers.1.mlp.down_proj.weight              -> blk.1.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.1.mlp.gate_proj.weight              -> blk.1.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.1.mlp.up_proj.weight                -> blk.1.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.1.post_attention_layernorm.weight   -> blk.1.ffn_norm.weight                    | BF16   | [4096]
+model.layers.1.self_attn.k_proj.weight           -> blk.1.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.1.self_attn.o_proj.weight           -> blk.1.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.1.self_attn.q_proj.weight           -> blk.1.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.1.self_attn.v_proj.weight           -> blk.1.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.10.input_layernorm.weight           -> blk.10.attn_norm.weight                  | BF16   | [4096]
+model.layers.10.mlp.down_proj.weight             -> blk.10.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.10.mlp.gate_proj.weight             -> blk.10.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.10.mlp.up_proj.weight               -> blk.10.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.10.post_attention_layernorm.weight  -> blk.10.ffn_norm.weight                   | BF16   | [4096]
+model.layers.10.self_attn.k_proj.weight          -> blk.10.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.10.self_attn.o_proj.weight          -> blk.10.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.10.self_attn.q_proj.weight          -> blk.10.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.10.self_attn.v_proj.weight          -> blk.10.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.11.mlp.gate_proj.weight             -> blk.11.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.11.self_attn.k_proj.weight          -> blk.11.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.11.self_attn.o_proj.weight          -> blk.11.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.11.self_attn.q_proj.weight          -> blk.11.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.11.self_attn.v_proj.weight          -> blk.11.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.2.input_layernorm.weight            -> blk.2.attn_norm.weight                   | BF16   | [4096]
+model.layers.2.mlp.down_proj.weight              -> blk.2.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.2.mlp.gate_proj.weight              -> blk.2.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.2.mlp.up_proj.weight                -> blk.2.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.2.post_attention_layernorm.weight   -> blk.2.ffn_norm.weight                    | BF16   | [4096]
+model.layers.2.self_attn.k_proj.weight           -> blk.2.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.2.self_attn.o_proj.weight           -> blk.2.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.2.self_attn.q_proj.weight           -> blk.2.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.2.self_attn.v_proj.weight           -> blk.2.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.3.input_layernorm.weight            -> blk.3.attn_norm.weight                   | BF16   | [4096]
+model.layers.3.mlp.down_proj.weight              -> blk.3.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.3.mlp.gate_proj.weight              -> blk.3.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.3.mlp.up_proj.weight                -> blk.3.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.3.post_attention_layernorm.weight   -> blk.3.ffn_norm.weight                    | BF16   | [4096]
+model.layers.3.self_attn.k_proj.weight           -> blk.3.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.3.self_attn.o_proj.weight           -> blk.3.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.3.self_attn.q_proj.weight           -> blk.3.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.3.self_attn.v_proj.weight           -> blk.3.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.4.input_layernorm.weight            -> blk.4.attn_norm.weight                   | BF16   | [4096]
+model.layers.4.mlp.down_proj.weight              -> blk.4.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.4.mlp.gate_proj.weight              -> blk.4.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.4.mlp.up_proj.weight                -> blk.4.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.4.post_attention_layernorm.weight   -> blk.4.ffn_norm.weight                    | BF16   | [4096]
+model.layers.4.self_attn.k_proj.weight           -> blk.4.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.4.self_attn.o_proj.weight           -> blk.4.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.4.self_attn.q_proj.weight           -> blk.4.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.4.self_attn.v_proj.weight           -> blk.4.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.5.input_layernorm.weight            -> blk.5.attn_norm.weight                   | BF16   | [4096]
+model.layers.5.mlp.down_proj.weight              -> blk.5.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.5.mlp.gate_proj.weight              -> blk.5.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.5.mlp.up_proj.weight                -> blk.5.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.5.post_attention_layernorm.weight   -> blk.5.ffn_norm.weight                    | BF16   | [4096]
+model.layers.5.self_attn.k_proj.weight           -> blk.5.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.5.self_attn.o_proj.weight           -> blk.5.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.5.self_attn.q_proj.weight           -> blk.5.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.5.self_attn.v_proj.weight           -> blk.5.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.6.input_layernorm.weight            -> blk.6.attn_norm.weight                   | BF16   | [4096]
+model.layers.6.mlp.down_proj.weight              -> blk.6.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.6.mlp.gate_proj.weight              -> blk.6.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.6.mlp.up_proj.weight                -> blk.6.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.6.post_attention_layernorm.weight   -> blk.6.ffn_norm.weight                    | BF16   | [4096]
+model.layers.6.self_attn.k_proj.weight           -> blk.6.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.6.self_attn.o_proj.weight           -> blk.6.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.6.self_attn.q_proj.weight           -> blk.6.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.6.self_attn.v_proj.weight           -> blk.6.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.7.input_layernorm.weight            -> blk.7.attn_norm.weight                   | BF16   | [4096]
+model.layers.7.mlp.down_proj.weight              -> blk.7.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.7.mlp.gate_proj.weight              -> blk.7.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.7.mlp.up_proj.weight                -> blk.7.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.7.post_attention_layernorm.weight   -> blk.7.ffn_norm.weight                    | BF16   | [4096]
+model.layers.7.self_attn.k_proj.weight           -> blk.7.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.7.self_attn.o_proj.weight           -> blk.7.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.7.self_attn.q_proj.weight           -> blk.7.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.7.self_attn.v_proj.weight           -> blk.7.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.8.input_layernorm.weight            -> blk.8.attn_norm.weight                   | BF16   | [4096]
+model.layers.8.mlp.down_proj.weight              -> blk.8.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.8.mlp.gate_proj.weight              -> blk.8.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.8.mlp.up_proj.weight                -> blk.8.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.8.post_attention_layernorm.weight   -> blk.8.ffn_norm.weight                    | BF16   | [4096]
+model.layers.8.self_attn.k_proj.weight           -> blk.8.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.8.self_attn.o_proj.weight           -> blk.8.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.8.self_attn.q_proj.weight           -> blk.8.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.8.self_attn.v_proj.weight           -> blk.8.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.9.input_layernorm.weight            -> blk.9.attn_norm.weight                   | BF16   | [4096]
+model.layers.9.mlp.down_proj.weight              -> blk.9.ffn_down.weight                    | BF16   | [4096, 11008]
+model.layers.9.mlp.gate_proj.weight              -> blk.9.ffn_gate.weight                    | BF16   | [11008, 4096]
+model.layers.9.mlp.up_proj.weight                -> blk.9.ffn_up.weight                      | BF16   | [11008, 4096]
+model.layers.9.post_attention_layernorm.weight   -> blk.9.ffn_norm.weight                    | BF16   | [4096]
+model.layers.9.self_attn.k_proj.weight           -> blk.9.attn_k.weight                      | BF16   | [4096, 4096]
+model.layers.9.self_attn.o_proj.weight           -> blk.9.attn_output.weight                 | BF16   | [4096, 4096]
+model.layers.9.self_attn.q_proj.weight           -> blk.9.attn_q.weight                      | BF16   | [4096, 4096]
+model.layers.9.self_attn.v_proj.weight           -> blk.9.attn_v.weight                      | BF16   | [4096, 4096]
+model.layers.11.input_layernorm.weight           -> blk.11.attn_norm.weight                  | BF16   | [4096]
+model.layers.11.mlp.down_proj.weight             -> blk.11.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.11.mlp.up_proj.weight               -> blk.11.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.11.post_attention_layernorm.weight  -> blk.11.ffn_norm.weight                   | BF16   | [4096]
+model.layers.12.input_layernorm.weight           -> blk.12.attn_norm.weight                  | BF16   | [4096]
+model.layers.12.mlp.down_proj.weight             -> blk.12.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.12.mlp.gate_proj.weight             -> blk.12.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.12.mlp.up_proj.weight               -> blk.12.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.12.post_attention_layernorm.weight  -> blk.12.ffn_norm.weight                   | BF16   | [4096]
+model.layers.12.self_attn.k_proj.weight          -> blk.12.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.12.self_attn.o_proj.weight          -> blk.12.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.12.self_attn.q_proj.weight          -> blk.12.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.12.self_attn.v_proj.weight          -> blk.12.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.13.input_layernorm.weight           -> blk.13.attn_norm.weight                  | BF16   | [4096]
+model.layers.13.mlp.down_proj.weight             -> blk.13.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.13.mlp.gate_proj.weight             -> blk.13.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.13.mlp.up_proj.weight               -> blk.13.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.13.post_attention_layernorm.weight  -> blk.13.ffn_norm.weight                   | BF16   | [4096]
+model.layers.13.self_attn.k_proj.weight          -> blk.13.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.13.self_attn.o_proj.weight          -> blk.13.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.13.self_attn.q_proj.weight          -> blk.13.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.13.self_attn.v_proj.weight          -> blk.13.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.14.input_layernorm.weight           -> blk.14.attn_norm.weight                  | BF16   | [4096]
+model.layers.14.mlp.down_proj.weight             -> blk.14.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.14.mlp.gate_proj.weight             -> blk.14.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.14.mlp.up_proj.weight               -> blk.14.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.14.post_attention_layernorm.weight  -> blk.14.ffn_norm.weight                   | BF16   | [4096]
+model.layers.14.self_attn.k_proj.weight          -> blk.14.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.14.self_attn.o_proj.weight          -> blk.14.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.14.self_attn.q_proj.weight          -> blk.14.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.14.self_attn.v_proj.weight          -> blk.14.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.15.input_layernorm.weight           -> blk.15.attn_norm.weight                  | BF16   | [4096]
+model.layers.15.mlp.down_proj.weight             -> blk.15.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.15.mlp.gate_proj.weight             -> blk.15.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.15.mlp.up_proj.weight               -> blk.15.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.15.post_attention_layernorm.weight  -> blk.15.ffn_norm.weight                   | BF16   | [4096]
+model.layers.15.self_attn.k_proj.weight          -> blk.15.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.15.self_attn.o_proj.weight          -> blk.15.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.15.self_attn.q_proj.weight          -> blk.15.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.15.self_attn.v_proj.weight          -> blk.15.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.16.input_layernorm.weight           -> blk.16.attn_norm.weight                  | BF16   | [4096]
+model.layers.16.mlp.down_proj.weight             -> blk.16.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.16.mlp.gate_proj.weight             -> blk.16.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.16.mlp.up_proj.weight               -> blk.16.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.16.post_attention_layernorm.weight  -> blk.16.ffn_norm.weight                   | BF16   | [4096]
+model.layers.16.self_attn.k_proj.weight          -> blk.16.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.16.self_attn.o_proj.weight          -> blk.16.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.16.self_attn.q_proj.weight          -> blk.16.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.16.self_attn.v_proj.weight          -> blk.16.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.17.input_layernorm.weight           -> blk.17.attn_norm.weight                  | BF16   | [4096]
+model.layers.17.mlp.down_proj.weight             -> blk.17.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.17.mlp.gate_proj.weight             -> blk.17.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.17.mlp.up_proj.weight               -> blk.17.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.17.post_attention_layernorm.weight  -> blk.17.ffn_norm.weight                   | BF16   | [4096]
+model.layers.17.self_attn.k_proj.weight          -> blk.17.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.17.self_attn.o_proj.weight          -> blk.17.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.17.self_attn.q_proj.weight          -> blk.17.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.17.self_attn.v_proj.weight          -> blk.17.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.18.input_layernorm.weight           -> blk.18.attn_norm.weight                  | BF16   | [4096]
+model.layers.18.mlp.down_proj.weight             -> blk.18.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.18.mlp.gate_proj.weight             -> blk.18.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.18.mlp.up_proj.weight               -> blk.18.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.18.post_attention_layernorm.weight  -> blk.18.ffn_norm.weight                   | BF16   | [4096]
+model.layers.18.self_attn.k_proj.weight          -> blk.18.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.18.self_attn.o_proj.weight          -> blk.18.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.18.self_attn.q_proj.weight          -> blk.18.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.18.self_attn.v_proj.weight          -> blk.18.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.19.input_layernorm.weight           -> blk.19.attn_norm.weight                  | BF16   | [4096]
+model.layers.19.mlp.down_proj.weight             -> blk.19.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.19.mlp.gate_proj.weight             -> blk.19.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.19.mlp.up_proj.weight               -> blk.19.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.19.post_attention_layernorm.weight  -> blk.19.ffn_norm.weight                   | BF16   | [4096]
+model.layers.19.self_attn.k_proj.weight          -> blk.19.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.19.self_attn.o_proj.weight          -> blk.19.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.19.self_attn.q_proj.weight          -> blk.19.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.19.self_attn.v_proj.weight          -> blk.19.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.20.input_layernorm.weight           -> blk.20.attn_norm.weight                  | BF16   | [4096]
+model.layers.20.mlp.down_proj.weight             -> blk.20.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.20.mlp.gate_proj.weight             -> blk.20.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.20.mlp.up_proj.weight               -> blk.20.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.20.post_attention_layernorm.weight  -> blk.20.ffn_norm.weight                   | BF16   | [4096]
+model.layers.20.self_attn.k_proj.weight          -> blk.20.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.20.self_attn.o_proj.weight          -> blk.20.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.20.self_attn.q_proj.weight          -> blk.20.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.20.self_attn.v_proj.weight          -> blk.20.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.21.input_layernorm.weight           -> blk.21.attn_norm.weight                  | BF16   | [4096]
+model.layers.21.mlp.down_proj.weight             -> blk.21.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.21.mlp.gate_proj.weight             -> blk.21.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.21.mlp.up_proj.weight               -> blk.21.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.21.post_attention_layernorm.weight  -> blk.21.ffn_norm.weight                   | BF16   | [4096]
+model.layers.21.self_attn.k_proj.weight          -> blk.21.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.21.self_attn.o_proj.weight          -> blk.21.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.21.self_attn.q_proj.weight          -> blk.21.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.21.self_attn.v_proj.weight          -> blk.21.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.22.input_layernorm.weight           -> blk.22.attn_norm.weight                  | BF16   | [4096]
+model.layers.22.mlp.down_proj.weight             -> blk.22.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.22.mlp.gate_proj.weight             -> blk.22.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.22.mlp.up_proj.weight               -> blk.22.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.22.post_attention_layernorm.weight  -> blk.22.ffn_norm.weight                   | BF16   | [4096]
+model.layers.22.self_attn.k_proj.weight          -> blk.22.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.22.self_attn.o_proj.weight          -> blk.22.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.22.self_attn.q_proj.weight          -> blk.22.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.22.self_attn.v_proj.weight          -> blk.22.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.23.mlp.gate_proj.weight             -> blk.23.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.23.mlp.up_proj.weight               -> blk.23.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.23.self_attn.k_proj.weight          -> blk.23.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.23.self_attn.o_proj.weight          -> blk.23.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.23.self_attn.q_proj.weight          -> blk.23.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.23.self_attn.v_proj.weight          -> blk.23.attn_v.weight                     | BF16   | [4096, 4096]
+lm_head.weight                                   -> output.weight                            | BF16   | [32008, 4096]
+model.layers.23.input_layernorm.weight           -> blk.23.attn_norm.weight                  | BF16   | [4096]
+model.layers.23.mlp.down_proj.weight             -> blk.23.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.23.post_attention_layernorm.weight  -> blk.23.ffn_norm.weight                   | BF16   | [4096]
+model.layers.24.input_layernorm.weight           -> blk.24.attn_norm.weight                  | BF16   | [4096]
+model.layers.24.mlp.down_proj.weight             -> blk.24.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.24.mlp.gate_proj.weight             -> blk.24.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.24.mlp.up_proj.weight               -> blk.24.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.24.post_attention_layernorm.weight  -> blk.24.ffn_norm.weight                   | BF16   | [4096]
+model.layers.24.self_attn.k_proj.weight          -> blk.24.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.24.self_attn.o_proj.weight          -> blk.24.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.24.self_attn.q_proj.weight          -> blk.24.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.24.self_attn.v_proj.weight          -> blk.24.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.25.input_layernorm.weight           -> blk.25.attn_norm.weight                  | BF16   | [4096]
+model.layers.25.mlp.down_proj.weight             -> blk.25.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.25.mlp.gate_proj.weight             -> blk.25.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.25.mlp.up_proj.weight               -> blk.25.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.25.post_attention_layernorm.weight  -> blk.25.ffn_norm.weight                   | BF16   | [4096]
+model.layers.25.self_attn.k_proj.weight          -> blk.25.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.25.self_attn.o_proj.weight          -> blk.25.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.25.self_attn.q_proj.weight          -> blk.25.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.25.self_attn.v_proj.weight          -> blk.25.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.26.input_layernorm.weight           -> blk.26.attn_norm.weight                  | BF16   | [4096]
+model.layers.26.mlp.down_proj.weight             -> blk.26.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.26.mlp.gate_proj.weight             -> blk.26.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.26.mlp.up_proj.weight               -> blk.26.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.26.post_attention_layernorm.weight  -> blk.26.ffn_norm.weight                   | BF16   | [4096]
+model.layers.26.self_attn.k_proj.weight          -> blk.26.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.26.self_attn.o_proj.weight          -> blk.26.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.26.self_attn.q_proj.weight          -> blk.26.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.26.self_attn.v_proj.weight          -> blk.26.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.27.input_layernorm.weight           -> blk.27.attn_norm.weight                  | BF16   | [4096]
+model.layers.27.mlp.down_proj.weight             -> blk.27.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.27.mlp.gate_proj.weight             -> blk.27.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.27.mlp.up_proj.weight               -> blk.27.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.27.post_attention_layernorm.weight  -> blk.27.ffn_norm.weight                   | BF16   | [4096]
+model.layers.27.self_attn.k_proj.weight          -> blk.27.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.27.self_attn.o_proj.weight          -> blk.27.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.27.self_attn.q_proj.weight          -> blk.27.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.27.self_attn.v_proj.weight          -> blk.27.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.28.input_layernorm.weight           -> blk.28.attn_norm.weight                  | BF16   | [4096]
+model.layers.28.mlp.down_proj.weight             -> blk.28.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.28.mlp.gate_proj.weight             -> blk.28.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.28.mlp.up_proj.weight               -> blk.28.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.28.post_attention_layernorm.weight  -> blk.28.ffn_norm.weight                   | BF16   | [4096]
+model.layers.28.self_attn.k_proj.weight          -> blk.28.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.28.self_attn.o_proj.weight          -> blk.28.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.28.self_attn.q_proj.weight          -> blk.28.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.28.self_attn.v_proj.weight          -> blk.28.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.29.input_layernorm.weight           -> blk.29.attn_norm.weight                  | BF16   | [4096]
+model.layers.29.mlp.down_proj.weight             -> blk.29.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.29.mlp.gate_proj.weight             -> blk.29.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.29.mlp.up_proj.weight               -> blk.29.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.29.post_attention_layernorm.weight  -> blk.29.ffn_norm.weight                   | BF16   | [4096]
+model.layers.29.self_attn.k_proj.weight          -> blk.29.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.29.self_attn.o_proj.weight          -> blk.29.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.29.self_attn.q_proj.weight          -> blk.29.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.29.self_attn.v_proj.weight          -> blk.29.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.30.input_layernorm.weight           -> blk.30.attn_norm.weight                  | BF16   | [4096]
+model.layers.30.mlp.down_proj.weight             -> blk.30.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.30.mlp.gate_proj.weight             -> blk.30.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.30.mlp.up_proj.weight               -> blk.30.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.30.post_attention_layernorm.weight  -> blk.30.ffn_norm.weight                   | BF16   | [4096]
+model.layers.30.self_attn.k_proj.weight          -> blk.30.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.30.self_attn.o_proj.weight          -> blk.30.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.30.self_attn.q_proj.weight          -> blk.30.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.30.self_attn.v_proj.weight          -> blk.30.attn_v.weight                     | BF16   | [4096, 4096]
+model.layers.31.input_layernorm.weight           -> blk.31.attn_norm.weight                  | BF16   | [4096]
+model.layers.31.mlp.down_proj.weight             -> blk.31.ffn_down.weight                   | BF16   | [4096, 11008]
+model.layers.31.mlp.gate_proj.weight             -> blk.31.ffn_gate.weight                   | BF16   | [11008, 4096]
+model.layers.31.mlp.up_proj.weight               -> blk.31.ffn_up.weight                     | BF16   | [11008, 4096]
+model.layers.31.post_attention_layernorm.weight  -> blk.31.ffn_norm.weight                   | BF16   | [4096]
+model.layers.31.self_attn.k_proj.weight          -> blk.31.attn_k.weight                     | BF16   | [4096, 4096]
+model.layers.31.self_attn.o_proj.weight          -> blk.31.attn_output.weight                | BF16   | [4096, 4096]
+model.layers.31.self_attn.q_proj.weight          -> blk.31.attn_q.weight                     | BF16   | [4096, 4096]
+model.layers.31.self_attn.v_proj.weight          -> blk.31.attn_v.weight                     | BF16   | [4096, 4096]
+model.norm.weight                                -> output_norm.weight                       | BF16   | [4096]
+Writing training_results/final/ggml-model-f16.gguf, format 1
+Padding vocab with 3 token(s) - <dummy00001> through <dummy00003>
+INFO 2024-07-21 12:02:15,976 gguf.gguf_writer:99: gguf: This GGUF file is for Little Endian only
+INFO 2024-07-21 12:02:16,102 gguf.vocab:60: Setting special token type bos to 1
+INFO 2024-07-21 12:02:16,102 gguf.vocab:60: Setting special token type eos to 32000
+INFO 2024-07-21 12:02:16,103 gguf.vocab:60: Setting special token type unk to 0
+INFO 2024-07-21 12:02:16,103 gguf.vocab:60: Setting special token type pad to 32000
+INFO 2024-07-21 12:02:16,103 gguf.vocab:68: Setting add_bos_token to False
+INFO 2024-07-21 12:02:16,103 gguf.vocab:68: Setting add_eos_token to False
+INFO 2024-07-21 12:02:16,103 gguf.vocab:72: Setting chat_template to {% for message in messages %}{% if message['role'] == 'system' %}{{'<|system|>'+ '
+' + message['content'] + '
+'}}{% elif message['role'] == 'user' %}{{'<|user|>' + '
+' + message['content'] + '
+'}}{% elif message['role'] == 'assistant' %}{{'<|assistant|>' + '
+' + message['content'] + '<|endoftext|>' + ('' if loop.last else '
+')}}{% endif %}{% endfor %}
+INFO 2024-07-21 12:02:16,105 gguf.gguf_writer:130: Writing the following files:
+INFO 2024-07-21 12:02:16,105 gguf.gguf_writer:135: training_results/final/ggml-model-f16.gguf: n_tensors = 291, total_size = 13.5G
+[  1/291] Writing tensor token_embd.weight                      | size  32008 x   4096  | type F16  | T+   3
+[  2/291] Writing tensor blk.0.attn_norm.weight                 | size   4096           | type F32  | T+   4
+[  3/291] Writing tensor blk.0.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+   4
+[  4/291] Writing tensor blk.0.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+   4
+[  5/291] Writing tensor blk.0.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+   4
+[  6/291] Writing tensor blk.0.ffn_norm.weight                  | size   4096           | type F32  | T+   4
+[  7/291] Writing tensor blk.0.attn_k.weight                    | size   4096 x   4096  | type F16  | T+   4
+[  8/291] Writing tensor blk.0.attn_output.weight               | size   4096 x   4096  | type F16  | T+   4
+[  9/291] Writing tensor blk.0.attn_q.weight                    | size   4096 x   4096  | type F16  | T+   4
+[ 10/291] Writing tensor blk.0.attn_v.weight                    | size   4096 x   4096  | type F16  | T+   4
+[ 11/291] Writing tensor blk.1.attn_norm.weight                 | size   4096           | type F32  | T+   4
+[ 12/291] Writing tensor blk.1.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+   6
+[ 13/291] Writing tensor blk.1.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+   6
+[ 14/291] Writing tensor blk.1.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+   6
+[ 15/291] Writing tensor blk.1.ffn_norm.weight                  | size   4096           | type F32  | T+   6
+[ 16/291] Writing tensor blk.1.attn_k.weight                    | size   4096 x   4096  | type F16  | T+   6
+[ 17/291] Writing tensor blk.1.attn_output.weight               | size   4096 x   4096  | type F16  | T+   6
+[ 18/291] Writing tensor blk.1.attn_q.weight                    | size   4096 x   4096  | type F16  | T+   6
+[ 19/291] Writing tensor blk.1.attn_v.weight                    | size   4096 x   4096  | type F16  | T+   6
+[ 20/291] Writing tensor blk.10.attn_norm.weight                | size   4096           | type F32  | T+   6
+[ 21/291] Writing tensor blk.10.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+   8
+[ 22/291] Writing tensor blk.10.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+   8
+[ 23/291] Writing tensor blk.10.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+   8
+[ 24/291] Writing tensor blk.10.ffn_norm.weight                 | size   4096           | type F32  | T+   8
+[ 25/291] Writing tensor blk.10.attn_k.weight                   | size   4096 x   4096  | type F16  | T+   8
+[ 26/291] Writing tensor blk.10.attn_output.weight              | size   4096 x   4096  | type F16  | T+   8
+[ 27/291] Writing tensor blk.10.attn_q.weight                   | size   4096 x   4096  | type F16  | T+   8
+[ 28/291] Writing tensor blk.10.attn_v.weight                   | size   4096 x   4096  | type F16  | T+   8
+[ 29/291] Writing tensor blk.11.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  11
+[ 30/291] Writing tensor blk.11.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  11
+[ 31/291] Writing tensor blk.11.attn_output.weight              | size   4096 x   4096  | type F16  | T+  11
+[ 32/291] Writing tensor blk.11.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  11
+[ 33/291] Writing tensor blk.11.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  11
+[ 34/291] Writing tensor blk.2.attn_norm.weight                 | size   4096           | type F32  | T+  11
+[ 35/291] Writing tensor blk.2.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  11
+[ 36/291] Writing tensor blk.2.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  11
+[ 37/291] Writing tensor blk.2.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  13
+[ 38/291] Writing tensor blk.2.ffn_norm.weight                  | size   4096           | type F32  | T+  13
+[ 39/291] Writing tensor blk.2.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  13
+[ 40/291] Writing tensor blk.2.attn_output.weight               | size   4096 x   4096  | type F16  | T+  13
+[ 41/291] Writing tensor blk.2.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  13
+[ 42/291] Writing tensor blk.2.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  13
+[ 43/291] Writing tensor blk.3.attn_norm.weight                 | size   4096           | type F32  | T+  13
+[ 44/291] Writing tensor blk.3.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  13
+[ 45/291] Writing tensor blk.3.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  16
+[ 46/291] Writing tensor blk.3.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  16
+[ 47/291] Writing tensor blk.3.ffn_norm.weight                  | size   4096           | type F32  | T+  16
+[ 48/291] Writing tensor blk.3.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  16
+[ 49/291] Writing tensor blk.3.attn_output.weight               | size   4096 x   4096  | type F16  | T+  16
+[ 50/291] Writing tensor blk.3.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  16
+[ 51/291] Writing tensor blk.3.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  16
+[ 52/291] Writing tensor blk.4.attn_norm.weight                 | size   4096           | type F32  | T+  16
+[ 53/291] Writing tensor blk.4.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  19
+[ 54/291] Writing tensor blk.4.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  19
+[ 55/291] Writing tensor blk.4.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  19
+[ 56/291] Writing tensor blk.4.ffn_norm.weight                  | size   4096           | type F32  | T+  19
+[ 57/291] Writing tensor blk.4.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  19
+[ 58/291] Writing tensor blk.4.attn_output.weight               | size   4096 x   4096  | type F16  | T+  19
+[ 59/291] Writing tensor blk.4.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  19
+[ 60/291] Writing tensor blk.4.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  19
+[ 61/291] Writing tensor blk.5.attn_norm.weight                 | size   4096           | type F32  | T+  19
+[ 62/291] Writing tensor blk.5.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  21
+[ 63/291] Writing tensor blk.5.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  22
+[ 64/291] Writing tensor blk.5.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  22
+[ 65/291] Writing tensor blk.5.ffn_norm.weight                  | size   4096           | type F32  | T+  22
+[ 66/291] Writing tensor blk.5.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  22
+[ 67/291] Writing tensor blk.5.attn_output.weight               | size   4096 x   4096  | type F16  | T+  22
+[ 68/291] Writing tensor blk.5.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  22
+[ 69/291] Writing tensor blk.5.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  22
+[ 70/291] Writing tensor blk.6.attn_norm.weight                 | size   4096           | type F32  | T+  22
+[ 71/291] Writing tensor blk.6.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  24
+[ 72/291] Writing tensor blk.6.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  24
+[ 73/291] Writing tensor blk.6.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  24
+[ 74/291] Writing tensor blk.6.ffn_norm.weight                  | size   4096           | type F32  | T+  25
+[ 75/291] Writing tensor blk.6.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  25
+[ 76/291] Writing tensor blk.6.attn_output.weight               | size   4096 x   4096  | type F16  | T+  25
+[ 77/291] Writing tensor blk.6.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  25
+[ 78/291] Writing tensor blk.6.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  25
+[ 79/291] Writing tensor blk.7.attn_norm.weight                 | size   4096           | type F32  | T+  25
+[ 80/291] Writing tensor blk.7.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  26
+[ 81/291] Writing tensor blk.7.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  27
+[ 82/291] Writing tensor blk.7.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  27
+[ 83/291] Writing tensor blk.7.ffn_norm.weight                  | size   4096           | type F32  | T+  27
+[ 84/291] Writing tensor blk.7.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  27
+[ 85/291] Writing tensor blk.7.attn_output.weight               | size   4096 x   4096  | type F16  | T+  27
+[ 86/291] Writing tensor blk.7.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  27
+[ 87/291] Writing tensor blk.7.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  28
+[ 88/291] Writing tensor blk.8.attn_norm.weight                 | size   4096           | type F32  | T+  28
+[ 89/291] Writing tensor blk.8.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  29
+[ 90/291] Writing tensor blk.8.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  29
+[ 91/291] Writing tensor blk.8.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  30
+[ 92/291] Writing tensor blk.8.ffn_norm.weight                  | size   4096           | type F32  | T+  30
+[ 93/291] Writing tensor blk.8.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  30
+[ 94/291] Writing tensor blk.8.attn_output.weight               | size   4096 x   4096  | type F16  | T+  30
+[ 95/291] Writing tensor blk.8.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  30
+[ 96/291] Writing tensor blk.8.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  31
+[ 97/291] Writing tensor blk.9.attn_norm.weight                 | size   4096           | type F32  | T+  31
+[ 98/291] Writing tensor blk.9.ffn_down.weight                  | size   4096 x  11008  | type F16  | T+  31
+[ 99/291] Writing tensor blk.9.ffn_gate.weight                  | size  11008 x   4096  | type F16  | T+  32
+[100/291] Writing tensor blk.9.ffn_up.weight                    | size  11008 x   4096  | type F16  | T+  32
+[101/291] Writing tensor blk.9.ffn_norm.weight                  | size   4096           | type F32  | T+  33
+[102/291] Writing tensor blk.9.attn_k.weight                    | size   4096 x   4096  | type F16  | T+  33
+[103/291] Writing tensor blk.9.attn_output.weight               | size   4096 x   4096  | type F16  | T+  33
+[104/291] Writing tensor blk.9.attn_q.weight                    | size   4096 x   4096  | type F16  | T+  34
+[105/291] Writing tensor blk.9.attn_v.weight                    | size   4096 x   4096  | type F16  | T+  34
+[106/291] Writing tensor blk.11.attn_norm.weight                | size   4096           | type F32  | T+  34
+[107/291] Writing tensor blk.11.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  34
+[108/291] Writing tensor blk.11.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  35
+[109/291] Writing tensor blk.11.ffn_norm.weight                 | size   4096           | type F32  | T+  36
+[110/291] Writing tensor blk.12.attn_norm.weight                | size   4096           | type F32  | T+  36
+[111/291] Writing tensor blk.12.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  36
+[112/291] Writing tensor blk.12.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  37
+[113/291] Writing tensor blk.12.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  38
+[114/291] Writing tensor blk.12.ffn_norm.weight                 | size   4096           | type F32  | T+  38
+[115/291] Writing tensor blk.12.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  38
+[116/291] Writing tensor blk.12.attn_output.weight              | size   4096 x   4096  | type F16  | T+  38
+[117/291] Writing tensor blk.12.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  39
+[118/291] Writing tensor blk.12.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  39
+[119/291] Writing tensor blk.13.attn_norm.weight                | size   4096           | type F32  | T+  39
+[120/291] Writing tensor blk.13.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  39
+[121/291] Writing tensor blk.13.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  40
+[122/291] Writing tensor blk.13.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  40
+[123/291] Writing tensor blk.13.ffn_norm.weight                 | size   4096           | type F32  | T+  41
+[124/291] Writing tensor blk.13.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  41
+[125/291] Writing tensor blk.13.attn_output.weight              | size   4096 x   4096  | type F16  | T+  41
+[126/291] Writing tensor blk.13.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  42
+[127/291] Writing tensor blk.13.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  42
+[128/291] Writing tensor blk.14.attn_norm.weight                | size   4096           | type F32  | T+  42
+[129/291] Writing tensor blk.14.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  42
+[130/291] Writing tensor blk.14.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  43
+[131/291] Writing tensor blk.14.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  44
+[132/291] Writing tensor blk.14.ffn_norm.weight                 | size   4096           | type F32  | T+  44
+[133/291] Writing tensor blk.14.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  44
+[134/291] Writing tensor blk.14.attn_output.weight              | size   4096 x   4096  | type F16  | T+  44
+[135/291] Writing tensor blk.14.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  45
+[136/291] Writing tensor blk.14.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  45
+[137/291] Writing tensor blk.15.attn_norm.weight                | size   4096           | type F32  | T+  45
+[138/291] Writing tensor blk.15.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  45
+[139/291] Writing tensor blk.15.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  46
+[140/291] Writing tensor blk.15.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  47
+[141/291] Writing tensor blk.15.ffn_norm.weight                 | size   4096           | type F32  | T+  47
+[142/291] Writing tensor blk.15.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  47
+[143/291] Writing tensor blk.15.attn_output.weight              | size   4096 x   4096  | type F16  | T+  48
+[144/291] Writing tensor blk.15.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  48
+[145/291] Writing tensor blk.15.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  48
+[146/291] Writing tensor blk.16.attn_norm.weight                | size   4096           | type F32  | T+  48
+[147/291] Writing tensor blk.16.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  48
+[148/291] Writing tensor blk.16.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  49
+[149/291] Writing tensor blk.16.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  50
+[150/291] Writing tensor blk.16.ffn_norm.weight                 | size   4096           | type F32  | T+  50
+[151/291] Writing tensor blk.16.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  50
+[152/291] Writing tensor blk.16.attn_output.weight              | size   4096 x   4096  | type F16  | T+  51
+[153/291] Writing tensor blk.16.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  51
+[154/291] Writing tensor blk.16.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  51
+[155/291] Writing tensor blk.17.attn_norm.weight                | size   4096           | type F32  | T+  51
+[156/291] Writing tensor blk.17.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  51
+[157/291] Writing tensor blk.17.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  52
+[158/291] Writing tensor blk.17.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  53
+[159/291] Writing tensor blk.17.ffn_norm.weight                 | size   4096           | type F32  | T+  54
+[160/291] Writing tensor blk.17.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  54
+[161/291] Writing tensor blk.17.attn_output.weight              | size   4096 x   4096  | type F16  | T+  54
+[162/291] Writing tensor blk.17.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  54
+[163/291] Writing tensor blk.17.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  54
+[164/291] Writing tensor blk.18.attn_norm.weight                | size   4096           | type F32  | T+  55
+[165/291] Writing tensor blk.18.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  55
+[166/291] Writing tensor blk.18.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  55
+[167/291] Writing tensor blk.18.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  56
+[168/291] Writing tensor blk.18.ffn_norm.weight                 | size   4096           | type F32  | T+  57
+[169/291] Writing tensor blk.18.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  57
+[170/291] Writing tensor blk.18.attn_output.weight              | size   4096 x   4096  | type F16  | T+  57
+[171/291] Writing tensor blk.18.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  57
+[172/291] Writing tensor blk.18.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  57
+[173/291] Writing tensor blk.19.attn_norm.weight                | size   4096           | type F32  | T+  58
+[174/291] Writing tensor blk.19.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  58
+[175/291] Writing tensor blk.19.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  58
+[176/291] Writing tensor blk.19.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  59
+[177/291] Writing tensor blk.19.ffn_norm.weight                 | size   4096           | type F32  | T+  60
+[178/291] Writing tensor blk.19.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  60
+[179/291] Writing tensor blk.19.attn_output.weight              | size   4096 x   4096  | type F16  | T+  60
+[180/291] Writing tensor blk.19.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  60
+[181/291] Writing tensor blk.19.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  60
+[182/291] Writing tensor blk.20.attn_norm.weight                | size   4096           | type F32  | T+  61
+[183/291] Writing tensor blk.20.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  61
+[184/291] Writing tensor blk.20.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  61
+[185/291] Writing tensor blk.20.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  62
+[186/291] Writing tensor blk.20.ffn_norm.weight                 | size   4096           | type F32  | T+  63
+[187/291] Writing tensor blk.20.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  63
+[188/291] Writing tensor blk.20.attn_output.weight              | size   4096 x   4096  | type F16  | T+  63
+[189/291] Writing tensor blk.20.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  63
+[190/291] Writing tensor blk.20.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  64
+[191/291] Writing tensor blk.21.attn_norm.weight                | size   4096           | type F32  | T+  64
+[192/291] Writing tensor blk.21.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  64
+[193/291] Writing tensor blk.21.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  64
+[194/291] Writing tensor blk.21.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  65
+[195/291] Writing tensor blk.21.ffn_norm.weight                 | size   4096           | type F32  | T+  66
+[196/291] Writing tensor blk.21.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  66
+[197/291] Writing tensor blk.21.attn_output.weight              | size   4096 x   4096  | type F16  | T+  66
+[198/291] Writing tensor blk.21.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  66
+[199/291] Writing tensor blk.21.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  67
+[200/291] Writing tensor blk.22.attn_norm.weight                | size   4096           | type F32  | T+  67
+[201/291] Writing tensor blk.22.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  67
+[202/291] Writing tensor blk.22.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  68
+[203/291] Writing tensor blk.22.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  68
+[204/291] Writing tensor blk.22.ffn_norm.weight                 | size   4096           | type F32  | T+  69
+[205/291] Writing tensor blk.22.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  69
+[206/291] Writing tensor blk.22.attn_output.weight              | size   4096 x   4096  | type F16  | T+  69
+[207/291] Writing tensor blk.22.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  70
+[208/291] Writing tensor blk.22.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  70
+[209/291] Writing tensor blk.23.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  70
+[210/291] Writing tensor blk.23.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  71
+[211/291] Writing tensor blk.23.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  72
+[212/291] Writing tensor blk.23.attn_output.weight              | size   4096 x   4096  | type F16  | T+  72
+[213/291] Writing tensor blk.23.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  72
+[214/291] Writing tensor blk.23.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  72
+[215/291] Writing tensor output.weight                          | size  32008 x   4096  | type F16  | T+  76
+[216/291] Writing tensor blk.23.attn_norm.weight                | size   4096           | type F32  | T+  77
+[217/291] Writing tensor blk.23.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  77
+[218/291] Writing tensor blk.23.ffn_norm.weight                 | size   4096           | type F32  | T+  77
+[219/291] Writing tensor blk.24.attn_norm.weight                | size   4096           | type F32  | T+  77
+[220/291] Writing tensor blk.24.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  77
+[221/291] Writing tensor blk.24.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  77
+[222/291] Writing tensor blk.24.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  77
+[223/291] Writing tensor blk.24.ffn_norm.weight                 | size   4096           | type F32  | T+  78
+[224/291] Writing tensor blk.24.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  78
+[225/291] Writing tensor blk.24.attn_output.weight              | size   4096 x   4096  | type F16  | T+  78
+[226/291] Writing tensor blk.24.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  78
+[227/291] Writing tensor blk.24.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  78
+[228/291] Writing tensor blk.25.attn_norm.weight                | size   4096           | type F32  | T+  78
+[229/291] Writing tensor blk.25.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  79
+[230/291] Writing tensor blk.25.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  80
+[231/291] Writing tensor blk.25.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  80
+[232/291] Writing tensor blk.25.ffn_norm.weight                 | size   4096           | type F32  | T+  81
+[233/291] Writing tensor blk.25.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  81
+[234/291] Writing tensor blk.25.attn_output.weight              | size   4096 x   4096  | type F16  | T+  81
+[235/291] Writing tensor blk.25.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  81
+[236/291] Writing tensor blk.25.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  81
+[237/291] Writing tensor blk.26.attn_norm.weight                | size   4096           | type F32  | T+  82
+[238/291] Writing tensor blk.26.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  82
+[239/291] Writing tensor blk.26.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  83
+[240/291] Writing tensor blk.26.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  83
+[241/291] Writing tensor blk.26.ffn_norm.weight                 | size   4096           | type F32  | T+  83
+[242/291] Writing tensor blk.26.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  83
+[243/291] Writing tensor blk.26.attn_output.weight              | size   4096 x   4096  | type F16  | T+  83
+[244/291] Writing tensor blk.26.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  84
+[245/291] Writing tensor blk.26.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  84
+[246/291] Writing tensor blk.27.attn_norm.weight                | size   4096           | type F32  | T+  84
+[247/291] Writing tensor blk.27.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  86
+[248/291] Writing tensor blk.27.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  86
+[249/291] Writing tensor blk.27.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  87
+[250/291] Writing tensor blk.27.ffn_norm.weight                 | size   4096           | type F32  | T+  87
+[251/291] Writing tensor blk.27.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  87
+[252/291] Writing tensor blk.27.attn_output.weight              | size   4096 x   4096  | type F16  | T+  87
+[253/291] Writing tensor blk.27.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  87
+[254/291] Writing tensor blk.27.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  88
+[255/291] Writing tensor blk.28.attn_norm.weight                | size   4096           | type F32  | T+  88
+[256/291] Writing tensor blk.28.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  89
+[257/291] Writing tensor blk.28.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  89
+[258/291] Writing tensor blk.28.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  89
+[259/291] Writing tensor blk.28.ffn_norm.weight                 | size   4096           | type F32  | T+  89
+[260/291] Writing tensor blk.28.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  89
+[261/291] Writing tensor blk.28.attn_output.weight              | size   4096 x   4096  | type F16  | T+  90
+[262/291] Writing tensor blk.28.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  90
+[263/291] Writing tensor blk.28.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  90
+[264/291] Writing tensor blk.29.attn_norm.weight                | size   4096           | type F32  | T+  90
+[265/291] Writing tensor blk.29.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  92
+[266/291] Writing tensor blk.29.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  92
+[267/291] Writing tensor blk.29.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  93
+[268/291] Writing tensor blk.29.ffn_norm.weight                 | size   4096           | type F32  | T+  93
+[269/291] Writing tensor blk.29.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  93
+[270/291] Writing tensor blk.29.attn_output.weight              | size   4096 x   4096  | type F16  | T+  93
+[271/291] Writing tensor blk.29.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  93
+[272/291] Writing tensor blk.29.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  94
+[273/291] Writing tensor blk.30.attn_norm.weight                | size   4096           | type F32  | T+  94
+[274/291] Writing tensor blk.30.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  94
+[275/291] Writing tensor blk.30.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  95
+[276/291] Writing tensor blk.30.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  96
+[277/291] Writing tensor blk.30.ffn_norm.weight                 | size   4096           | type F32  | T+  96
+[278/291] Writing tensor blk.30.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  96
+[279/291] Writing tensor blk.30.attn_output.weight              | size   4096 x   4096  | type F16  | T+  96
+[280/291] Writing tensor blk.30.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  96
+[281/291] Writing tensor blk.30.attn_v.weight                   | size   4096 x   4096  | type F16  | T+  96
+[282/291] Writing tensor blk.31.attn_norm.weight                | size   4096           | type F32  | T+  96
+[283/291] Writing tensor blk.31.ffn_down.weight                 | size   4096 x  11008  | type F16  | T+  98
+[284/291] Writing tensor blk.31.ffn_gate.weight                 | size  11008 x   4096  | type F16  | T+  99
+[285/291] Writing tensor blk.31.ffn_up.weight                   | size  11008 x   4096  | type F16  | T+  99
+[286/291] Writing tensor blk.31.ffn_norm.weight                 | size   4096           | type F32  | T+  99
+[287/291] Writing tensor blk.31.attn_k.weight                   | size   4096 x   4096  | type F16  | T+  99
+[288/291] Writing tensor blk.31.attn_output.weight              | size   4096 x   4096  | type F16  | T+  99
+[289/291] Writing tensor blk.31.attn_q.weight                   | size   4096 x   4096  | type F16  | T+  99
+[290/291] Writing tensor blk.31.attn_v.weight                   | size   4096 x   4096  | type F16  | T+ 100
+[291/291] Writing tensor output_norm.weight                     | size   4096           | type F32  | T+ 100
+Wrote training_results/final/ggml-model-f16.gguf
+Save trained model to models/ggml-model-f16.gguf
+----
+
+Training using the newly generated data is a time and resource intensive task. Depending on the number of iterations desired, internet connection for safetensor downloading, and other factors, it can take from 5 minutes up to an hour. It is not required to train the model to continue with the lab as we will use an already trained model that was created using a generate step with 100 instructions. 
+
+[#serve_new_model]
+== Serving the new model
+
+At this point, we are ready to serve our model and test it out. Keep in mind that we only generated a small amount of data points, so the results will vary, and we can’t guarantee the skill we are looking to add was generated with such a small sample size. For that reason, we are going to do a bit of a cooking-show style serving where we are going to serve a model using the exact steps we did in this workshop but with an instruction size of 100 instead of 5. This is simply due to the time constraints; otherwise, you would be sitting here for a few hours, and that isn’t going to make you happy. ;) 
+
+NOTE: Make sure to stop the previous `ilab serve` command that may still have running in the other terminal tab.
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/instructlab
+cp ~/workshop/ggml-ilab-pretrained-Q4_K_M.gguf models/ggml-ilab-pretrained-Q4_K_M.gguf
+ilab serve --model-path models/ggml-ilab-pretrained-Q4_K_M.gguf
+----
+
+NOTE: If you get an error message about not being able to bind to the address, simply kbd:[CTRL+C]  the `ilab serve` command that may still have running in your other terminal tab.
+
+Start up another chat session with it:
+
+[source,sh,role=execute,subs=attributes+]
+----
+ilab chat -m models/ggml-ilab-pretrained-Q4_K_M.gguf
+----
+
+Verify the results by entering in the original prompt again:
+
+[source,sh,role=execute,subs=attributes+]
+----
+What is the Instructlab project?
+----
+
+The answer should be better and more accurate! If all went right, and I am sure it did ;) the output should look something like this: (keep in mind that your output may look different due to the nature of large language models)
+
+
+[source,sh]
+---
+╭────────────────────────────────────────────── models/ggml-ilab-pretrained-Q4_K_M.gguf ─────────────────────────────────╮
+│ 'Instructlab' is an innovative AI-powered tool designed to facilitate human collaboration with large language models.  │
+│ It enables users to create, manage, and contribute to models like me, fostering a more interactive and engaging        │
+│ environment for AI development and utilization.                                                                        │
+│                                                                                                                        │
+│ As part of the Instructlab project, developers can pool their resources, share knowledge, and collaborate on model     │
+│ training and improvement. This collective approach enhances the capabilities of AI models, making them more versatile, │
+│ accurate, and adaptable to a wide range of tasks and applications.                                                     │
+│                                                                                                                        │
+│ Furthermore, Instructlab promotes responsible AI practices by providing guidelines and resources for ethical           │
+│ development and use. By encouraging collaboration and openness, the project aims to create a diverse and inclusive     │
+│ community that leverages AI technology for the betterment of all.                                                      │
+│                                                                                                                        │
+│ If you'd like to learn more about Instructlab or get involved in its development, I recommend visiting the official    │
+│ website or reaching out to the project's maintainers for the most up-to-date information and resources.               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────── elapsed 7.527 seconds ─╯
+----
+
+Woohoo young padawan, mission accomplished. May the 4th be with you, oh wait - May the 4th was a few days ago. Sorry. Move along.
+
+[#deploy_app]
+== Deploying a Chat Assistant
+
+In this example, we will use a hypothetical multi-national insurance company called "Parasol Insurance" that has implemented an insurance claim web app. You will have access to an assistant that can help you with the claim processing. Open the assistant by clicking on the 'Chat' icon at the bottom right of an opened claim.
+
+The assistant will open, and you can ask it questions about the claim. The application can be integrated with a technique called Retrieval Augmented Generation (RAG). While RAG is not currently in place, it can be integrated in the future. With RAG, you can store new information in a database, and relevant parts can be retrieved and added to a query as context before sending it to the LLM. The assistant can then rely on this documentation to answer your questions.
+
+=== Build Parasol Insurace Application 
+
+First, we want to quit all the model serving and chat by hitting kbd:[CTRL+c]. 
+
+===  Model serving with a pretrained model
+
+[source,sh,role=execute,subs=attributes+]
+----
+cp ~/workshop/ggml-parasol-pretrained-Q4_K_M.gguf models/ggml-parasol-pretrained-Q4_K_M.gguf
+ilab serve --model-path models/ggml-parasol-pretrained-Q4_K_M.gguf
+----
+
+===  Run Parasol app
+
+In another terminal, git clone and build the application:
+
+[source,sh,role=execute,subs=attributes+]
+----
+git clone https://github.com/rh-rad-ai-roadshow/parasol-insurance.git ~/workshop/parasol-insurance
+cd ~/workshop/parasol-insurance/app
+./mvnw clean package -DskipTests
+----
+
+[source,sh,role=execute,subs=attributes+]
+----
+cd ~/workshop/parasol-insurance/app
+./mvnw clean package -DskipTests
+----
+
+[source,sh,role=execute,subs=attributes+]
+----
+java -jar target/quarkus-app/quarkus-run.jar
+----
+
+* Access the app via http://<hostname>:8005. The hostname is the same as as your current environment. 
+* Go to a claim and launch the chat assistant.
+
+
+[#conclusion]
+== Conclusion
+
+You’ve successfully got ilab up and running. SUCCESS! Breathe in for a bit. We’re proud of you, and I dare say you’re an AI Engineer now. You’re probably wondering what the next steps are, and frankly, your guess is as good as mine, but let me give you some suggestions.
+
+Start playing with both skill and knowledge additions. This is to give something "new" to the model. You give it a chunk of data, something it doesn’t know about, and then train it on that. How could InstructLab-trained models help at your company? Which friend will you brag to first?
+rg
+As you can see, InstructLab is pretty straightforward and most of the time you spend will be creating the new taxonomy content.
+
+Again, we’re so happy you made it this far, and remember if you have questions we are here to help, and are excited to see what you come up with!
+
+Please visit the official project github at link:https://github.com/instructlab[https://github.com/instructlab] and check out the community repo to learn about how to get involved with the upstream community!

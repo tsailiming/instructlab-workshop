@@ -13,13 +13,17 @@ Based on the following sources:
 
 1. Order a [demo catalogue](https://demo.redhat.com/catalog?item=babylon-catalog-prod/rhdp.instructlab-rhel.prod&utm_source=webapp&utm_medium=share-link)
 
-2. Git clone the repo under the `instruct` user:
+2. SSH into the vm and git clone the repo under the `instruct` user:
 
     ```bash
     git clone https://github.com/tsailiming/instructlab-workshop
     ```
 
-3. Run the install script
+3. Run the install script.
+
+> [!NOTE]  
+> `llama_cpp_python` can take 15mins to compile and install. 
+
 
     ```bash
     cd instructlab-workshop

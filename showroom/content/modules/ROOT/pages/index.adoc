@@ -1847,8 +1847,8 @@ First, we want to quit all the model serving and chat by hitting kbd:[CTRL+c].
 
 [source,sh,role=execute,subs=attributes+]
 ----
-cp ~/workshop/ggml-parasol-pretrained-Q4_K_M.gguf models/ggml-parasol-pretrained-Q4_K_M.gguf
-ilab serve --model-path models/ggml-parasol-pretrained-Q4_K_M.gguf
+cp ~/workshop/ggml-parasol-pretrained-f16.gguf models/ggml-parasol-pretrained-f16.gguf
+ilab serve --model-path models/ggml-parasol-pretrained-f16.gguf
 ----
 
 ===  Run Parasol app

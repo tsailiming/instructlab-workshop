@@ -1920,17 +1920,17 @@ NOTE: If you cannot access the page using http, try incognito mode or another br
 You now have a list of all the claims that have been received by the application. You can navigate each claim (click the subject line) and see that the interface is much more user friendly, with a nice interface to navigate the claim and see the pictures that were attached to it.
 
 [.bordershadow]
-image::05/new-app-claims.png[]
+image::new-app-claims.png[]
 
 Moreover, for the claims that have been processed, you can see the summary of this claim as well as the customer sentiment analysis, the location and time of the event that have been extracted from the claim, and the pictures that have been processed by the AI.
 
 [.bordershadow]
-image::05/new-app-1.png[]
+image::new-app-1.png[]
 
 You also now have access to an assistant that can help you with the claim processing. Open the assistant by clicking on the 'Chat icon' at the bottom right of an opened claim. The assistant will open and you can ask it questions about the claim. 
 
 [.bordershadow]
-image::05/new-app-chat-icon.png[]
+image::new-app-chat-icon.png[]
 
 [#conclusion]
 == Conclusion

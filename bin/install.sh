@@ -36,7 +36,8 @@ ln -sf $HOME/.local/share/instructlab/datasets $ILAB_HOME/.
 ln -sf $HOME/.local/share/instructlab/models $ILAB_HOME/.
 
 # Copy parasol model
-cp $ROOT_DIR/artifacts/ggml-parasol-pretrained-Q4_K_M.gguf ~/workshop/ggml-parasol-pretrained-Q4_K_M.gguf
+cp $ROOT_DIR/artifacts/ggml-parasol-pretrained-f16.gguf ~/workshop/ggml-parasol-pretrained-f16.gguf
+cp $ROOT_DIR/artifacts/parasol-qna.yaml ~/workshop/parasol-qna.yaml
 
 (cd $ROOT_DIR && make build-content)
 

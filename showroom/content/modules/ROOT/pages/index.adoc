@@ -474,7 +474,6 @@ The LAB method is driven by taxonomies, which are largely created manually and w
 
 InstructLab crowdsources the process of tuning and improving models by collecting two types of data: knowledge and skills in a new open source community. These submissions are collected in a taxonomy of YAML files to be used in the synthetic data generation process. To help you understand the directory structure of a taxonomy, please refer to the following image.
   
-
 We are now going to leverage the taxonomy model to teach the model the knowledge on the Instructlab project
 
 *Step 1*: Verify you have the taxonomy directory in the working directory you are in.
@@ -511,6 +510,21 @@ mkdir -p ~/instructlab/taxonomy/knowledge/instructlab/overview
 *Step 3*: Add a new knowledge.
 
 The way the taxonomy approach works is that we provide a file, named qna.yaml, that contains a sample data set of questions and answers. This data set will be used in the process of creating many more synthetic data examples.  The important thing to understand about the qna.yaml file is that it must follow a specific schema for InstructLab to use it to synthetically generate more examples. 
+
+Each qna.yaml file requires a minimum of five question-answer pairs. The qna.yaml format must include the following fields:
+
+* version: The value must be the number 2.
+* task_description: An optional description of the knowledge.
+* created_by: Your GitHub username.
+* domain: Category of the knowledge.
+* seed_examples: Five or more examples sourced from the provided knowledge documents.
+* question: A question for the model. This key is required.
+* answer: The desired response from the model. This key is required.
+* document: The source of your knowledge contribution.
+* repo: The URL to your repository that holds your knowledge markdown files.
+* commit: The SHA of the commit in your repository with your knowledge markdown files.
+* patterns: A list of glob patterns specifying the markdown files in your repository. Any glob pattern that starts with \*, such as *.md, must be quoted due to YAML rules. For example, "*.md".
+
 Instead of having to type a bunch of information in by hand, simply run the following command to copy the qna.yaml file to your taxonomy directory:
 
 [source,sh,role=execute,subs=attributes+]
@@ -1845,6 +1859,38 @@ First, we want to quit all the model serving and chat by hitting kbd:[CTRL+c].
 
 ===  Model serving with an existing pretrained model for Parasol
 
+We are using an existing pretrailed model `ggml-parasol-pretrained-f16.gguf` with the following knowledge qna.yaml
+
+[source,yaml]
+----
+created_by: Marty_McFly
+domain: parasol
+seed_examples:
+- answer: The DeLorean was manufactured from 1981 to 1983.
+  question: When was the DeLorean manufactured?
+- answer: The DeLorean Motor Company manufactured the DeLorean DMC-12.
+  question: Who manufactured the DeLorean DMC-12?
+- answer: Transmission Repair costs between $2,500 and $4,000 for the Delorean DMC-12.
+  question: How much does it cost to repair the transmission on a DeLorean DMC-12?
+- answer: The top speed of the DeLorean DMC-12 was 110MPH and the 0-60 time was approximately 8.8 seconds.
+  question: How fast was the Delorean DMC-12?
+- answer: The DeLorean DMC-12 weighs 2,712lb (1,230kg).
+  question: How much does the DeLorean DMC-12 weigh?
+- answer: Maintenance on a DeLorean DMC-12 includes regular oil changes every 3,000 miles or 3 months,
+    brake fluid change every 2 years, transmission fluid changes every 30,000 miles, coolant change every 2 years,
+    and regularly checking the battery for corrosion and proper connection.
+  question: What does maintenance for a DeLorean DMC12 look like?
+- answer: It costs between $800 and $1000 to repair the suspension on a DeLorean DMC-12.
+  question: How much does it cost to repair the supension on a DeLorean DMC-12?
+task_description: 'Details on instructlab community project'
+document:
+  repo: https://github.com/gshipley/backToTheFuture.git
+  commit: 8bd9220c616afe24b9673d94ec1adce85320809c
+  patterns:
+    - data.md
+----
+
+Serve the model:
 [source,sh,role=execute,subs=attributes+]
 ----
 cp ~/workshop/ggml-parasol-pretrained-f16.gguf models/ggml-parasol-pretrained-f16.gguf
@@ -1867,9 +1913,24 @@ cd ~/workshop/parasol-insurance/app
 java -jar target/quarkus-app/quarkus-run.jar
 ----
 
-* Access the app via http://<hostname>:8005. The hostname is the same as as your current environment. 
-* Go to a claim and launch the chat assistant.
+Access the app via http://<hostname>:8005. The hostname is the same as as your current environment. 
 
+NOTE: If you cannot access the page using http, try incognito mode or another browser.
+
+You now have a list of all the claims that have been received by the application. You can navigate each claim (click the subject line) and see that the interface is much more user friendly, with a nice interface to navigate the claim and see the pictures that were attached to it.
+
+[.bordershadow]
+image::05/new-app-claims.png[]
+
+Moreover, for the claims that have been processed, you can see the summary of this claim as well as the customer sentiment analysis, the location and time of the event that have been extracted from the claim, and the pictures that have been processed by the AI.
+
+[.bordershadow]
+image::05/new-app-1.png[]
+
+You also now have access to an assistant that can help you with the claim processing. Open the assistant by clicking on the 'Chat icon' at the bottom right of an opened claim. The assistant will open and you can ask it questions about the claim. 
+
+[.bordershadow]
+image::05/new-app-chat-icon.png[]
 
 [#conclusion]
 == Conclusion

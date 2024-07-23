@@ -1843,7 +1843,7 @@ The assistant will open, and you can ask it questions about the claim. The appli
 
 First, we want to quit all the model serving and chat by hitting kbd:[CTRL+c]. 
 
-===  Model serving with a pretrained model
+===  Model serving with an existing pretrained model for Parasol
 
 [source,sh,role=execute,subs=attributes+]
 ----

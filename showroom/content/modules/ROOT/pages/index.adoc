@@ -1864,12 +1864,6 @@ cd ~/workshop/parasol-insurance/app
 
 [source,sh,role=execute,subs=attributes+]
 ----
-cd ~/workshop/parasol-insurance/app
-./mvnw clean package -DskipTests
-----
-
-[source,sh,role=execute,subs=attributes+]
-----
 java -jar target/quarkus-app/quarkus-run.jar
 ----
 

@@ -1,0 +1,59 @@
+---
+- name: Run InstructLab workshop content
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping host and register output
+      ansible.builtin.ping: {}
+      register: ping_output
+
+    - name: show ping_output
+      ansible.builtin.debug:
+        var: ping_output
+    
+    - name: CD into the home directory
+      ansible.builtin.command: cd ~
+      register: cd_output
+
+    - name: run command git clone
+      ansible.builtin.command: git clone https://github.com/tsailiming/instructlab-workshop.git
+      register: git_clone_output
+      ignore_errors: true
+
+    - name: run command to check if install.sh has been ran
+      ansible.builtin.shell: sudo cat /opt/showroom/content/www/modules/index.html | grep meetup
+      register: meetup_grep
+      ignore_errors: true
+
+    - name: print meetup_grep output
+      ansible.builtin.debug:
+        var: meetup_grep.stdout
+
+    - name: execute install.sh
+      ansible.builtin.command: ~/instructlab-workshop/bin/install.sh
+      register: install_output
+      when: meetup_grep.stdout == ""
+
+    - name: check if ~/workshop/ggml-parasol-pretrained-f16.gguf has the file
+      ansible.builtin.stat:
+        path: ~/workshop/ggml-parasol-pretrained-f16.gguf
+      register: gguf_file
+
+    - name: print if gguf_file is present output
+      ansible.builtin.debug:
+        var: gguf_file.stat.exists
+
+    - name: download model into ~/workshop
+      ansible.builtin.get_url:
+        url: https://ilabej91.s3.amazonaws.com/ggml-parasol-pretrained-f16.gguf
+        dest: ~/workshop/ggml-parasol-pretrained-f16.gguf
+      when: gguf_file.stat.exists == false
+    
+    - name: check the size of the ~/workshop/ggml-parasol-pretrained-f16.gguf file
+      ansible.builtin.stat:
+        path: ~/workshop/ggml-parasol-pretrained-f16.gguf
+      register: gguf_file_size
+
+    - name: print out gguf_file_size var
+      ansible.builtin.debug:
+        var: gguf_file_size.stat.size

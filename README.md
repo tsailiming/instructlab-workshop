@@ -32,6 +32,13 @@ Based on the following sources:
 
 4. Accesss the updated showroom content
 
+## Fine tuning the Parasol model with InstructLab
+
+```bash
+bin/parasol.sh
+```
+
+
 ## Changes
 
 1. The `bin/install.sh` will setup InstructLab with `instructlab==0.18.0a4` and ensure `llama_cpp_python` has GPU offload support enabled. 

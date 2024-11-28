@@ -582,7 +582,7 @@ In order to train the model, quit the serving model with kbd:[Ctrl+C]. We can be
 
 [source,console,role=execute,subs=attributes+]
 ----
-ilab model train --data-path ~/.local/share/instructlab/datasets/ --pipeline simple
+ilab model train --data-path ~/.local/share/instructlab/datasets/ --pipeline simple --device cuda
 ----
 
 After the model is trained, it will be saved as a GGUF at `/home/instruct/.local/share/instructlab/checkpoints/ggml-model-f16.gguf`
@@ -614,6 +614,7 @@ Loading checkpoint shards: 100%|████████████████
 Since this process will take over qute some time to complete we have provided a model that has already been through this process. 
 
 First, let's stop the training process with with kbd:[ctrl+C]). In order to serve the newly trained model you can now run the following in the *upper* command window:
+
 [source,console,role=execute,subs=attributes+]
 ----
 ilab model serve --model-path /home/instruct/files/summit-connect-merlinite-lab-Q4.gguf

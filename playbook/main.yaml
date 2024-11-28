@@ -21,7 +21,7 @@
       ignore_errors: true
 
     - name: run command to check if install.sh has been ran
-      ansible.builtin.shell: sudo cat /opt/showroom/content/www/modules/index.html | grep meetup
+      ansible.builtin.shell: sudo cat /opt/showroom/content/www/modules/index.html | grep ggml-model-f16.gguf
       register: meetup_grep
       ignore_errors: true
 

@@ -34,26 +34,26 @@
       register: install_output
       when: meetup_grep.stdout == ""
 
-    - name: check if ~/workshop/ggml-parasol-pretrained-f16.gguf has the file
-      ansible.builtin.stat:
-        path: ~/workshop/ggml-parasol-pretrained-f16.gguf
-      register: gguf_file
+    # - name: check if ~/workshop/ggml-parasol-pretrained-f16.gguf has the file
+    #   ansible.builtin.stat:
+    #     path: ~/workshop/ggml-parasol-pretrained-f16.gguf
+    #   register: gguf_file
 
-    - name: print if gguf_file is present output
-      ansible.builtin.debug:
-        var: gguf_file.stat.exists
+    # - name: print if gguf_file is present output
+    #   ansible.builtin.debug:
+    #     var: gguf_file.stat.exists
 
-    - name: download model into ~/workshop
-      ansible.builtin.get_url:
-        url: https://ilabej91.s3.amazonaws.com/ggml-parasol-pretrained-f16.gguf
-        dest: ~/workshop/ggml-parasol-pretrained-f16.gguf
-      when: gguf_file.stat.exists == false
+    # - name: download model into ~/workshop
+    #   ansible.builtin.get_url:
+    #     url: https://ilabej91.s3.amazonaws.com/ggml-parasol-pretrained-f16.gguf
+    #     dest: ~/workshop/ggml-parasol-pretrained-f16.gguf
+    #   when: gguf_file.stat.exists == false
     
-    - name: check the size of the ~/workshop/ggml-parasol-pretrained-f16.gguf file
-      ansible.builtin.stat:
-        path: ~/workshop/ggml-parasol-pretrained-f16.gguf
-      register: gguf_file_size
+    # - name: check the size of the ~/workshop/ggml-parasol-pretrained-f16.gguf file
+    #   ansible.builtin.stat:
+    #     path: ~/workshop/ggml-parasol-pretrained-f16.gguf
+    #   register: gguf_file_size
 
-    - name: print out gguf_file_size var
-      ansible.builtin.debug:
-        var: gguf_file_size.stat.size
+    # - name: print out gguf_file_size var
+    #   ansible.builtin.debug:
+    #     var: gguf_file_size.stat.size

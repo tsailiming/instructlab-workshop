@@ -585,8 +585,6 @@ In order to train the model, quit the serving model with kbd:[Ctrl+C]. We can be
 ilab model train --data-path ~/.local/share/instructlab/datasets/ --pipeline simple --device cuda
 ----
 
-After the model is trained, it will be saved as a GGUF at `/home/instruct/.local/share/instructlab/checkpoints/ggml-model-f16.gguf`
-
 You would see the following output: 
 
 [source,sh]
@@ -611,9 +609,11 @@ LINUX_TRAIN.PY: LOADING THE BASE MODEL
 Loading checkpoint shards: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  5.95it/s]
 ----
 
+After the model is trained, it will be saved as a GGUF at `/home/instruct/.local/share/instructlab/checkpoints/ggml-model-f16.gguf`
+
 Since this process will take over qute some time to complete we have provided a model that has already been through this process. 
 
-First, let's stop the training process with with kbd:[ctrl+C]). In order to serve the newly trained model you can now run the following in the *upper* command window:
+First, let's stop the training process with with kbd:[ctrl+C]. In order to serve the newly trained model you can now run the following in the *upper* command window:
 
 [source,console,role=execute,subs=attributes+]
 ----

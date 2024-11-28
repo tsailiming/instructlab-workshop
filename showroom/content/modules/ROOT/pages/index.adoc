@@ -566,15 +566,54 @@ NOTE: Using a scale factor of 5 is generally not enough synthetic data to effect
 
 Once the new data has been generated, the next step is to train the model with the updated knowledge. This is performed with the `ilab model train` command.
 
-NOTE: Training using the newly generated data is a time and resource intensive task. Depending on the number of epochs desired, internet connection for safetensor downloading, and other factors, it can take many hours and is highly dependent on the hardware used.
-
 [#changing_model]
 == Enhancing a LLM with InstructLab
 
-Due to the time constraints of this lab, we will not actually be training the model! This would require a full-scale synthetic data generation process and a training run that could take many hours. You probably have smoewhere else you need to be, so we are going to show you the end results without making you wait.
+NOTE: Training using the newly generated data is a time and resource intensive task. Depending on the number of epochs desired, internet connection for safetensor downloading, and other factors, it can take many hours and is highly dependent on the hardware used.
 
-. We have provided a model that has already been through this process in your demo system. First, if you have any processes running in either terminal window, type kbd:[CTRL+C] to exit. In order to serve the newly trained model you can now run the following in the *upper* command window:
+To train the model, you will have to download the base model to start with. 
 
+[source,console,role=execute,subs=attributes+]
+----
+ilab model download --repository instructlab/granite-7b-lab
+----
+
+In order to train the model, quit the serving model with kbd:[Ctrl+C]. We can begin to train a model with your synthetically generated data. 
+
+[source,console,role=execute,subs=attributes+]
+----
+ilab model train --data-path ~/.local/share/instructlab/datasets/ --pipeline simple
+----
+
+After the model is trained, it will be saved as a GGUF at `/home/instruct/.local/share/instructlab/checkpoints/ggml-model-f16.gguf`
+
+You would see the following output: 
+
+[source,sh]
+----
+LINUX_TRAIN.PY: NUM EPOCHS IS:  1
+LINUX_TRAIN.PY: TRAIN FILE IS:  taxonomy_data/train_gen.jsonl
+LINUX_TRAIN.PY: TEST FILE IS:  taxonomy_data/test_gen.jsonl
+LINUX_TRAIN.PY: Using device 'cuda:0'
+  NVidia CUDA version: 12.1
+  AMD ROCm HIP version: n/a
+  cuda:0 is 'NVIDIA A10G' (15.3 GiB of 22.1 GiB free, capability: 8.6)
+  WARNING: You have less than 18253611008 GiB of free GPU memory on '{index}'. Training may fail, use slow shared host memory, or move some layers to CPU.
+  Training does not use the local InstructLab serve. Consider stopping the server to free up about 5 GiB of GPU memory.
+LINUX_TRAIN.PY: LOADING DATASETS
+Generating train split: 5 examples [00:00, 265.43 examples/s]
+Generating train split: 7 examples [00:00, 6582.99 examples/s]
+/home/instruct/instructlab/venv/lib64/python3.11/site-packages/huggingface_hub/file_download.py:1150: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+LINUX_TRAIN.PY: NOT USING 4-bit quantization
+LINUX_TRAIN.PY: LOADING THE BASE MODEL
+Loading checkpoint shards: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  5.95it/s]
+----
+
+Since this process will take over qute some time to complete we have provided a model that has already been through this process. 
+
+First, let's stop the training process with with kbd:[ctrl+C]). In order to serve the newly trained model you can now run the following in the *upper* command window:
 [source,console,role=execute,subs=attributes+]
 ----
 ilab model serve --model-path /home/instruct/files/summit-connect-merlinite-lab-Q4.gguf

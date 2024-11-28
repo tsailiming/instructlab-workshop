@@ -1,7 +1,0 @@
-instructlab==0.18.0a4
-instructlab-dolomite==0.1.1
-instructlab-eval==0.1.0
-instructlab-quantize==0.1.0
-instructlab-schema==0.2.0
-instructlab-sdg==0.1.2
-instructlab-training==0.3.0

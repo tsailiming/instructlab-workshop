@@ -1,6 +1,6 @@
 ---
 name: modules
-title: Sample Module Title
+title: RHEL AI & InstructLab
 version: master
 nav:
   - modules/ROOT/nav.adoc
@@ -23,3 +23,4 @@ asciidoc:
       text: Red Hat
     - url: https://www.redhat.com/en/summit
       text: Summit
+    toc: false

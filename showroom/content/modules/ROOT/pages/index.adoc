@@ -582,7 +582,7 @@ In order to train the model, quit the serving model with kbd:[Ctrl+C]. We can be
 
 [source,console,role=execute,subs=attributes+]
 ----
-ilab model train --data-path ~/.local/share/instructlab/datasets/ --pipeline simple --device cuda
+ilab model train --data-path  /home/instruct/.local/share/instructlab/datasets/ --pipeline simple --device cuda
 ----
 
 You would see the following output: 
